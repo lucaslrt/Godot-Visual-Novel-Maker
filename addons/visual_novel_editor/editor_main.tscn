@@ -1,0 +1,85 @@
+[gd_scene load_steps=2 format=3 uid="uid://b785ufb0f238e"]
+
+[ext_resource type="Script" uid="uid://do72ryj7i8dhp" path="res://addons/visual_novel_editor/editor_main.gd" id="1_hd7xp"]
+
+[node name="EditorMain" type="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_hd7xp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Toolbar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="AddChapterButton" type="Button" parent="VBoxContainer/Toolbar"]
+layout_mode = 2
+text = "Add Chapter"
+
+[node name="DeleteChapterButton" type="Button" parent="VBoxContainer/Toolbar"]
+layout_mode = 2
+text = "Delete Chapter"
+
+[node name="SaveButton" type="Button" parent="VBoxContainer/Toolbar"]
+layout_mode = 2
+text = "Save"
+
+[node name="LoadButton" type="Button" parent="VBoxContainer/Toolbar"]
+layout_mode = 2
+text = "Load"
+
+[node name="HSplitContainer" type="HSplitContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ChapterList" type="VBoxContainer" parent="VBoxContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/HSplitContainer/ChapterList"]
+layout_mode = 2
+text = "Chapters"
+
+[node name="ItemList" type="ItemList" parent="VBoxContainer/HSplitContainer/ChapterList"]
+layout_mode = 2
+
+[node name="TabContainer" type="TabContainer" parent="VBoxContainer/HSplitContainer"]
+layout_mode = 2
+current_tab = 0
+
+[node name="ChapterEditor" type="VBoxContainer" parent="VBoxContainer/HSplitContainer/TabContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+metadata/_tab_index = 0
+
+[node name="ChapterNameEdit" type="LineEdit" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor"]
+layout_mode = 2
+placeholder_text = "Chapter Name"
+
+[node name="ChapterDescriptionEdit" type="TextEdit" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor"]
+layout_mode = 2
+placeholder_text = "Chapter Description"
+
+[node name="HSplitContainer" type="HSplitContainer" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="GraphEdit" type="GraphEdit" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BlockEditor" type="Panel" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer"]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor"]
+layout_mode = 2
