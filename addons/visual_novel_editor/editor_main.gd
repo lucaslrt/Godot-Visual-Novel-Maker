@@ -35,7 +35,46 @@ func _ready():
 	add_choice_btn.pressed.connect(_on_add_choice_pressed)
 	graph_edit.get_menu_hbox().add_child(add_choice_btn)
 	
+	# Adicionar botões para start/end
+	var add_start_btn = Button.new()
+	add_start_btn.text = "Add Start"
+	add_start_btn.pressed.connect(_on_add_start_pressed)
+	graph_edit.get_menu_hbox().add_child(add_start_btn)
+	
+	var add_end_btn = Button.new()
+	add_end_btn.text = "Add End"
+	add_end_btn.pressed.connect(_on_add_end_pressed)
+	graph_edit.get_menu_hbox().add_child(add_end_btn)
+	
+	# Configurar o GraphEdit
+	graph_edit.connection_request.connect(_on_connection_request)
+	graph_edit.disconnection_request.connect(_on_disconnection_request)
+	graph_edit.connection_to_empty.connect(_on_connection_to_empty)
+	
+	# Habilitar conexões entre slots
+	graph_edit.set_connection_lines_antialiased(true)
+	
+	# Configurar tema
+	var theme = Theme.new()
+	
+	# Estilo para nó de início
+	var start_style = StyleBoxFlat.new()
+	start_style.bg_color = Color(0.2, 0.8, 0.2)
+	theme.set_stylebox("panel", "GraphNodeStart", start_style)
+	
+	# Estilo para nó de fim
+	var end_style = StyleBoxFlat.new()
+	end_style.bg_color = Color(0.8, 0.2, 0.2)
+	theme.set_stylebox("panel", "GraphNodeEnd", end_style)
+	
+	# Aplicar tema
+	graph_edit.theme = theme
+	
 	_load_chapters()
+
+func _process(delta):
+	if Engine.is_editor_hint():
+		graph_edit.queue_redraw()
 
 # Métodos para interação com a UI
 func _on_add_chapter_button_pressed():
@@ -83,6 +122,33 @@ func _on_delete_chapter_button_pressed():
 				current_chapter = null
 				_clear_chapter_editor()
 
+func _on_add_start_pressed():
+	if not current_chapter:
+		return
+	
+	var block_id = "start_" + str(Time.get_unix_time_from_system())
+	var block_data = {
+		"type": "start",
+		"graph_position": graph_edit.scroll_offset + Vector2(100, 100)
+	}
+	
+	current_chapter.add_block(block_id, block_data)
+	current_chapter.start_block_id = block_id  # Definir como bloco inicial
+	_update_chapter_editor()
+
+func _on_add_end_pressed():
+	if not current_chapter:
+		return
+	
+	var block_id = "end_" + str(Time.get_unix_time_from_system())
+	var block_data = {
+		"type": "end",
+		"graph_position": graph_edit.scroll_offset + Vector2(100, 100)
+	}
+	
+	current_chapter.add_block(block_id, block_data)
+	_update_chapter_editor()
+
 func _on_save_button_pressed():
 	if current_chapter:
 		current_chapter.chapter_name = chapter_name_edit.text
@@ -118,69 +184,6 @@ func _refresh_chapter_list():
 	
 	for chapter_name in VisualNovelSingleton.chapters:
 		chapter_list.add_item(chapter_name)
-
-#func _update_chapter_editor():
-	#if current_chapter:
-		#chapter_name_edit.text = current_chapter.chapter_name
-		#chapter_description_edit.text = current_chapter.chapter_description
-		#
-		## Limpar o grafo existente
-		#for child in graph_edit.get_children():
-			#if child is GraphNode:
-				#graph_edit.remove_child(child)
-				#child.queue_free()
-		#
-		## Adicionar blocos ao grafo
-		#for block_id in current_chapter.blocks:
-			#var block = current_chapter.blocks[block_id]
-			#_add_block_to_graph(block_id, block)
-		#
-		## Adicionar conexões entre os blocos
-		#for block_id in current_chapter.blocks:
-			#var block = current_chapter.blocks[block_id]
-			#if block.has("next_block_id") and not block.next_block_id.is_empty():
-				#graph_edit.connect_node(block_id, 0, block.next_block_id, 0)
-			#
-			#if block.has("choices"):
-				#for i in range(block.choices.size()):
-					#var choice = block.choices[i]
-					#if not choice.next_block_id.is_empty():
-						#graph_edit.connect_node(block_id, i + 1, choice.next_block_id, 0)
-#
-##func _add_block_to_graph(block_id, block_data):
-	##var graph_node = GraphNode.new()
-	##graph_node.name = block_id
-	##graph_node.title = block_data.type.capitalize() + ": " + block_id
-	##graph_node.resizable = true
-	##graph_node.set_size(Vector2(200, 100))
-	##
-	### Adicionar conteúdo com base no tipo do bloco
-	##var content = Label.new()
-	##match block_data.type:
-		##"dialogue":
-			##content.text = block_data.character_name + ":\n" + block_data.text
-		##"choice":
-			##var choices_text = ""
-			##for choice in block_data.choices:
-				##choices_text += "- " + choice.text + "\n"
-			##content.text = "Escolhas:\n" + choices_text
-	##
-	##graph_node.add_child(content)
-	##
-	### Configure os slots (para conectar blocos)
-	##if block_data.type == "dialogue":
-		##graph_node.set_slot(0, true, 0, Color.GREEN, true, 0, Color.RED)
-	##elif block_data.type == "choice":
-		##graph_node.set_slot(0, true, 0, Color.GREEN, false, 0, Color.RED)
-		##
-		### Adicionar slots adicionais para cada escolha
-		##for i in range(block_data.choices.size()):
-			##var slot = Label.new()
-			##slot.text = "Escolha " + str(i + 1)
-			##graph_node.add_child(slot)
-			##graph_node.set_slot(i + 1, false, 0, Color.GREEN, true, 0, Color.RED)
-	##
-	##graph_edit.add_child(graph_node)
 
 func _update_block_editor():
 	if not current_chapter or current_block_id.is_empty():
@@ -381,6 +384,84 @@ func _create_choice_editor(parent, block_data):
 	)
 	parent.add_child(save_button)
 
+func _on_connection_request(from_node, from_port, to_node, to_port):
+	print("Tentando conectar: ", from_node, ":", from_port, " -> ", to_node, ":", to_port)
+	
+	# Permitir a conexão no GraphEdit
+	graph_edit.connect_node(from_node, from_port, to_node, to_port)
+	
+	# Atualizar os dados do capítulo
+	var from_block = current_chapter.blocks[from_node]
+	
+	match from_block.type:
+		"start", "dialogue":
+			# Para nós simples, armazenar apenas o próximo bloco
+			from_block["next_block_id"] = to_node
+		
+		"choice":
+			# Para nós de escolha, atualizar a escolha específica
+			# from_port - 1 porque o slot 0 é a entrada
+			if from_port > 0 and from_block.has("choices") and from_block.choices.size() > from_port - 1:
+				from_block.choices[from_port - 1]["next_block_id"] = to_node
+	
+	# Sinalizar que os dados foram alterados
+	_update_connections()
+
+func _is_connection_valid(from_block, to_block, from_port) -> bool:
+	# Não permitir conectar a um bloco start
+	if to_block["type"] == "start":
+		return false
+	
+	# Não permitir conectar de um bloco end
+	if from_block["type"] == "end":
+		return false
+	
+	# Validações específicas para blocos choice
+	if from_block["type"] == "choice":
+		if from_port >= from_block.get("choices", []).size():
+			return false
+	
+	return true
+
+func _on_disconnection_request(from_node, from_port, to_node, to_port):
+	if not current_chapter:
+		return
+	
+	var from_block = current_chapter.blocks.get(from_node)
+	
+	if not from_block:
+		return
+	
+	# Atualizar os dados do bloco
+	match from_block["type"]:
+		"start":
+			from_block["next_block_id"] = ""
+		"dialogue":
+			from_block["next_block_id"] = ""
+		"choice":
+			if from_port < from_block.get("choices", []).size():
+				from_block["choices"][from_port]["next_block_id"] = ""
+	
+	# Atualizar visualmente
+	graph_edit.disconnect_node(from_node, from_port, to_node, to_port)
+
+func _on_connection_to_empty(from_node, from_port, release_position):
+	# Criar um novo bloco quando arrastar conexão para área vazia
+	var new_block_id = "dialogue_" + str(Time.get_unix_time_from_system())
+	var new_block_data = {
+		"type": "dialogue",
+		"character_name": "Personagem",
+		"text": "Novo diálogo...",
+		"next_block_id": "",
+		"graph_position": release_position
+	}
+	
+	current_chapter.add_block(new_block_id, new_block_data)
+	
+	# Conectar ao novo bloco
+	_on_connection_request(from_node, from_port, new_block_id, 0)
+	_update_chapter_editor()
+
 func _clear_chapter_editor():
 	chapter_name_edit.text = ""
 	chapter_description_edit.text = ""
@@ -488,37 +569,29 @@ func _clear_graph():
 			child.queue_free()
 
 func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
-	# Carregar a cena do nó de diálogo
 	var block_scene = preload("uid://rj8arjvt7auh")
-	
-	# Verificar se a cena foi carregada corretamente
-	if not block_scene:
-		push_error("Failed to load dialogue block scene")
-		return
-	
-	# Instanciar o nó
 	var node = block_scene.instantiate()
 	node.name = block_id
 	
-	# Configurar o nó
+	# Configurar aparência baseada no tipo
+	match block_data["type"]:
+		"start":
+			node.theme_type_variation = "GraphNodeStart"
+		"end":
+			node.theme_type_variation = "GraphNodeEnd"
+		"dialogue":
+			node.theme_type_variation = "GraphNodeDialogue"
+		"choice":
+			node.theme_type_variation = "GraphNodeChoice"
+	
 	node.setup(block_data.duplicate(true))
 	node.block_updated.connect(_on_block_updated.bind(block_id))
 	
-	# Definir posição
 	if block_data.has("graph_position"):
 		node.position_offset = block_data["graph_position"]
 	else:
 		node.position_offset = Vector2(randi_range(0, 500), randi_range(0, 300))
 	
-	# Configurar slots de conexão
-	match block_data["type"]:
-		"dialogue":
-			node.set_slot(0, false, 0, Color(0.5, 0.5, 1), true, 0, Color(1, 0.5, 0.5))
-		"choice":
-			for i in range(block_data["choices"].size()):
-				node.set_slot(i, false, 0, Color(0.5, 0.5, 1), true, 0, Color(1, 0.5, 0.5))
-	
-	# Adicionar ao GraphEdit
 	graph_edit.add_child(node)
 
 func _on_block_updated(new_data, block_id):
@@ -531,59 +604,53 @@ func _on_block_updated(new_data, block_id):
 		current_chapter.blocks[block_id] = new_data
 		_update_connections()
 
-func _update_connections():
-	# Limpar todas as conexões
-	for conn in graph_edit.get_connection_list():
-		graph_edit.disconnect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+func _update_connections() -> void:
+	"""
+	Atualiza as conexões entre os nós do diálogo no graph_edit
+	com base no tipo de nó e nas escolhas disponíveis.
+	"""
+	# Limpar conexões existentes
+	graph_edit.clear_connections()
 	
-	if not current_chapter:
-		return
+	# Obter todos os nós no grafo
+	var nodes = {}
+	for node_id in current_chapter.blocks:
+		var node = graph_edit.get_node_or_null(NodePath(node_id))
+		if node:
+			nodes[node_id] = node
 	
-	# Adicionar conexões baseadas nos dados
-	for block_id in current_chapter.blocks:
-		var block = current_chapter.blocks[block_id]
+	# Reconstruir conexões
+	for from_id in current_chapter.blocks:
+		var from_block = current_chapter.blocks[from_id]
+		var from_node = nodes.get(from_id)
 		
-		if block.type == "dialogue" and block.has("next_block_id") and not block.next_block_id.is_empty():
-			graph_edit.connect_node(block_id, 0, block.next_block_id, 0)
-		
-		if block.type == "choice" and block.has("choices"):
-			for i in range(block.choices.size()):
-				var choice = block.choices[i]
-				if not choice.next_block_id.is_empty():
-					graph_edit.connect_node(block_id, i, choice.next_block_id, 0)
-
-func _on_connection_request(from_node, from_port, to_node, to_port):
-	if not current_chapter:
-		return
-	
-	var from_block = current_chapter.blocks.get(from_node)
-	var to_block = current_chapter.blocks.get(to_node)
-	
-	if not from_block or not to_block:
-		return
-	
-	if from_block.type == "dialogue":
-		from_block.next_block_id = to_node
-	elif from_block.type == "choice" and from_port < from_block.choices.size():
-		from_block.choices[from_port].next_block_id = to_node
-	
-	_update_connections()
-
-func _on_disconnection_request(from_node, from_port, to_node, to_port):
-	if not current_chapter:
-		return
-	
-	var from_block = current_chapter.blocks.get(from_node)
-	
-	if not from_block:
-		return
-	
-	if from_block.type == "dialogue":
-		from_block.next_block_id = ""
-	elif from_block.type == "choice" and from_port < from_block.choices.size():
-		from_block.choices[from_port].next_block_id = ""
-	
-	_update_connections()
+		if not from_node:
+			continue
+			
+		match from_block.type:
+			"start", "dialogue":
+				# Para nós "start" e "dialogue", conectar ao nó seguinte se existir
+				if from_block.has("next_block_id") and not from_block.next_block_id.is_empty():
+					var to_id = from_block.next_block_id
+					var to_node = nodes.get(to_id)
+					
+					if to_node:
+						# Conectar saída do nó atual à entrada do próximo nó
+						graph_edit.connect_node(from_id, 0, to_id, 0)
+			
+			"choice":
+				# Para nós "choice", conectar cada opção ao seu respectivo próximo nó
+				if from_block.has("choices"):
+					for i in range(from_block.choices.size()):
+						var choice = from_block.choices[i]
+						if choice.has("next_block_id") and not choice.next_block_id.is_empty():
+							var to_id = choice.next_block_id
+							var to_node = nodes.get(to_id)
+							
+							if to_node:
+								# Conectar saída da escolha à entrada do próximo nó
+								# Slot de saída da escolha é i+1 (o slot 0 é a entrada)
+								graph_edit.connect_node(from_id, i+1, to_id, 0)
 
 func _on_delete_nodes_request(nodes):
 	if not current_chapter:

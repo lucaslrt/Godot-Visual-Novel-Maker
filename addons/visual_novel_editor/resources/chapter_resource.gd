@@ -10,13 +10,27 @@ class_name ChapterResource
 
 # Adicionar um novo bloco ao capítulo
 func add_block(block_id, block_data):
+	# Validar tipos de bloco
+	if block_data["type"] not in ["start", "end", "dialogue", "choice"]:
+		push_error("Tipo de bloco inválido: " + block_data["type"])
+		return null
+	
 	blocks[block_id] = block_data
 	
-	# Se este for o primeiro bloco, defina-o como bloco inicial
-	if blocks.size() == 1:
+	# Se for um bloco start, definir como início
+	if block_data["type"] == "start":
+		start_block_id = block_id
+	# Se for o primeiro bloco e não houver start, definir como início
+	elif blocks.size() == 1 and not has_start_block():
 		start_block_id = block_id
 	
 	return block_id
+
+func has_start_block():
+	for block in blocks.values():
+		if block["type"] == "start":
+			return true
+	return false
 
 # Remover um bloco do capítulo
 func remove_block(block_id):
