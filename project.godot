@@ -17,6 +17,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 VisualNovelSingleton="*res://addons/visual_novel_editor/autoload/visual_novel_singleton.gd"
+EventBus="*res://addons/visual_novel_editor/autoload/event_bus.gd"
 
 [editor_plugins]
 

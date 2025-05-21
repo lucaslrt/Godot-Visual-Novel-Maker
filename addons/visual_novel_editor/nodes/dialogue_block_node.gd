@@ -49,55 +49,43 @@ func _update_ui() -> void:
 		add_child(toggle_btn)
 
 func _configure_slots():
-	# Limpar todos os slots primeiro
 	clear_all_slots()
 	
 	match block_data["type"]:
 		"start":
 			title = "INÍCIO"
 			set_slot(0, 
-				false,  # Habilitar slot de entrada? 
-				0, Color(0, 0, 0, 0),  # Cor entrada (transparente)
-				true,   # Habilitar slot de saída
-				0, Color(0.2, 0.8, 0.2)  # Cor saída (verde)
+				false, 0, Color(0, 0, 0, 0),  # Sem entrada
+				true, 0, Color(0.2, 0.8, 0.2)  # Saída verde
 			)
 		
 		"end":
 			title = "FIM"
 			set_slot(0, 
-				true,   # Habilitar slot de entrada
-				0, Color(0.8, 0.2, 0.2),  # Cor entrada (vermelho)
-				false,  # Habilitar slot de saída?
-				0, Color(0, 0, 0, 0)  # Cor saída (transparente)
+				true, 0, Color(0.8, 0.2, 0.2),  # Entrada vermelha
+				false, 0, Color(0, 0, 0, 0)     # Sem saída
 			)
 		
 		"dialogue":
-			title = "Diálogo"
+			title = "Diálogo: " + block_data.get("character_name", "Nenhum")
 			set_slot(0, 
-				true,   # Entrada
-				0, Color(0.3, 0.3, 0.8),  # Azul
-				true,   # Saída
-				0, Color(0.8, 0.3, 0.3)   # Vermelho
+				true, 0, Color(0.3, 0.3, 0.8),  # Entrada azul
+				true, 0, Color(0.8, 0.3, 0.3)   # Saída vermelha
 			)
 		
 		"choice":
 			title = "Escolha"
-			# Configurar slot de entrada no topo
+			# Slot de entrada principal
 			set_slot(0, 
-				true,  # Entrada
-				0, Color(0.3, 0.3, 0.8),  # Azul
-				false, # Sem saída no slot principal
-				0, Color(0, 0, 0, 0)
+				true, 0, Color(0.3, 0.3, 0.8),  # Entrada azul
+				false, 0, Color(0, 0, 0, 0)     # Sem saída
 			)
 			
-			# Configurar slots para cada escolha
+			# Slots para cada escolha
 			for i in range(block_data.get("choices", []).size()):
-				var slot_index = i + 1  # +1 porque o slot 0 é para entrada
-				set_slot(slot_index, 
-					false,  # Sem entrada nos slots de escolha
-					0, Color(0, 0, 0, 0),
-					true,   # Saída para cada escolha
-					0, Color(0.8, 0.8, 0.2)  # Amarelo
+				set_slot(i + 1, 
+					false, 0, Color(0, 0, 0, 0),     # Sem entrada
+					true, 0, Color(0.8, 0.8, 0.2)    # Saída amarela
 				)
 
 func _setup_preview_ui(parent: Control) -> void:
@@ -119,8 +107,9 @@ func _setup_preview_ui(parent: Control) -> void:
 				block_data.get("text", "")
 			]
 			content.editable = false
-			content.fit_content_height = true
+			content.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 			content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+			content.custom_minimum_size.y = 0  # Permite que o TextEdit encolha
 			content.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			parent.add_child(content)
 			
@@ -131,11 +120,14 @@ func _setup_preview_ui(parent: Control) -> void:
 				parent.add_child(expr_label)
 			
 			if block_data.has("character_position"):
+				var pos = block_data.character_position
+				# Verificar se é Vector2, caso contrário usar valor padrão
+				if typeof(pos) != TYPE_VECTOR2:
+					pos = Vector2(0.5, 1.0)
+					block_data["character_position"] = pos
+				
 				var pos_label = Label.new()
-				pos_label.text = "Posição: %.1f, %.1f" % [
-					block_data.character_position.x,
-					block_data.character_position.y
-				]
+				pos_label.text = "Posição: %.1f, %.1f" % [pos.x, pos.y]
 				parent.add_child(pos_label)
 		
 		"choice":
@@ -245,6 +237,15 @@ func _setup_edit_ui(parent: Control) -> void:
 				block_data["text"] = text_edit.text
 				_emit_update()
 			)
+			if not block_data.has("character_position") or typeof(block_data.character_position) != TYPE_VECTOR2:
+				block_data["character_position"] = Vector2(0.5, 1.0)
+				
+				pos_x = SpinBox.new()
+				pos_x.min_value = 0
+				pos_x.max_value = 1
+				pos_x.step = 0.1
+				pos_x.value = block_data.character_position.x
+			
 			parent.add_child(text_edit)
 		
 		"choice":
@@ -309,3 +310,8 @@ func _toggle_edit_mode():
 
 func _emit_update():
 	block_updated.emit(block_data)
+
+func clear_all_slots():
+	# Limpa todos os slots para evitar problemas com slots fantasmas
+	for i in range(32):  # Número arbitrário grande o suficiente
+		set_slot(i, false, 0, Color(0, 0, 0, 0), false, 0, Color(0, 0, 0, 0))
