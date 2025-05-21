@@ -39,19 +39,22 @@ func _on_add_chapter_button_pressed():
 	new_chapter.chapter_name = "Novo Capítulo " + str(chapter_list.item_count + 1)
 	new_chapter.chapter_description = "Descrição do capítulo"
 	
-	# Adicionar um bloco inicial
-	var block_id = "start_" + str(Time.get_unix_time_from_system())
-	var block_data = {
-		"type": "dialogue",
-		"character_name": "Narrator",
-		"character_expression": "default",
-		"character_position": Vector2(0.5, 1.0),
-		"text": "Começo da história...",
-		"next_block_id": "",
-		"graph_position": Vector2(100, 100)
+	# Adicionar bloco inicial
+	var start_block_id = "start_" + str(Time.get_unix_time_from_system())
+	var start_block_data = {
+		"type": "start",
+		"graph_position": Vector2(100, 300)
 	}
-	new_chapter.add_block(block_id, block_data)
-	new_chapter.start_block_id = block_id
+	new_chapter.add_block(start_block_id, start_block_data)
+	new_chapter.start_block_id = start_block_id
+	
+	# Adicionar bloco final
+	var end_block_id = "end_" + str(Time.get_unix_time_from_system())
+	var end_block_data = {
+		"type": "end",
+		"graph_position": Vector2(800, 300)
+	}
+	new_chapter.add_block(end_block_id, end_block_data)
 	
 	# Registrar o capítulo
 	if VisualNovelSingleton.has_method("register_chapter"):
