@@ -12,27 +12,57 @@ extends Panel
 var current_chapter: ChapterResource = null
 
 func _ready():
+	# REMOVIDO: Verificação que impedia execução no editor
+	# O plugin DEVE executar no editor
+	
 	# Conectar sinais
 	$VBoxContainer/Toolbar/AddChapterButton.pressed.connect(_on_add_chapter_button_pressed)
 	$VBoxContainer/Toolbar/DeleteChapterButton.pressed.connect(_on_delete_chapter_button_pressed)
 	$VBoxContainer/Toolbar/SaveButton.pressed.connect(_on_save_button_pressed)
 	$VBoxContainer/Toolbar/LoadButton.pressed.connect(_on_load_button_pressed)
 	
-	#EventBus.register_event("_update_chapter_editor")
-	#EventBus.register_event("update_block_editor")
+	# Conectar sinal da lista de capítulos
+	if chapter_list:
+		chapter_list.item_selected.connect(_on_chapter_selected)
 	
-	chapter_list.item_selected.connect(_on_chapter_selected)
-	graph_edit.connect("change_chapter_ui", _on_chapter_data_changed)
+	# Conectar sinal do graph_edit se existir
+	if graph_edit:
+		graph_edit.connect("change_chapter_ui", _on_chapter_data_changed)
 	
+	# Aguardar alguns frames para garantir que tudo esteja inicializado
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Verificar se o VisualNovelSingleton está disponível
+	if not _check_singleton():
+		print("VisualNovelSingleton não disponível durante _ready")
+		# Tentar novamente após um pequeno delay
+		get_tree().create_timer(0.1).timeout.connect(_delayed_initialization)
+		return
+	
+	# Carregar e atualizar a lista de capítulos
 	_load_chapters()
+	_refresh_chapter_list()
+
+func _delayed_initialization():
+	print("Tentando inicialização atrasada...")
+	if _check_singleton():
+		_load_chapters()
+		_refresh_chapter_list()
+	else:
+		print("VisualNovelSingleton ainda não disponível")
 
 func _process(delta):
-	if Engine.is_editor_hint():
+	# CORRIGIDO: Verificar se graph_edit existe antes de tentar usar
+	if graph_edit:
 		graph_edit.queue_redraw()
 
 # Métodos para interação com a UI
 func _on_add_chapter_button_pressed():
-	if not Engine.is_editor_hint():
+	# REMOVIDO: Verificação desnecessária do editor
+	
+	# Verificar se o VisualNovelSingleton está disponível
+	if not _check_singleton():
 		return
 	
 	var new_chapter = ChapterResource.new()
@@ -57,19 +87,23 @@ func _on_add_chapter_button_pressed():
 	new_chapter.add_block(end_block_id, end_block_data)
 	
 	# Registrar o capítulo
-	if VisualNovelSingleton.has_method("register_chapter"):
-		VisualNovelSingleton.register_chapter(new_chapter)
-	else:
-		push_error("VisualNovelSingleton não está carregado corretamente!")
+	VisualNovelSingleton.register_chapter(new_chapter)
 	
+	# Atualizar a lista
 	_refresh_chapter_list()
-	chapter_list.select(chapter_list.item_count - 1)
-	_on_chapter_selected(chapter_list.item_count - 1)
+	
+	# Selecionar o novo capítulo
+	var new_index = chapter_list.item_count - 1
+	chapter_list.select(new_index)
+	_on_chapter_selected(new_index)
 
 func _on_delete_chapter_button_pressed():
-	var selected_index = chapter_list.get_selected_items()
-	if selected_index.size() > 0:
-		var chapter_name = chapter_list.get_item_text(selected_index[0])
+	if not _check_singleton():
+		return
+		
+	var selected_items = chapter_list.get_selected_items()
+	if selected_items.size() > 0:
+		var chapter_name = chapter_list.get_item_text(selected_items[0])
 		if VisualNovelSingleton.chapters.has(chapter_name):
 			VisualNovelSingleton.chapters.erase(chapter_name)
 			_refresh_chapter_list()
@@ -80,208 +114,100 @@ func _on_delete_chapter_button_pressed():
 				_clear_chapter_editor()
 
 func _on_chapter_data_changed(chapter_name:String, chapter_description: String):
-	chapter_description_edit.text = chapter_description
-	chapter_name_edit.text = chapter_name
+	if chapter_description_edit:
+		chapter_description_edit.text = chapter_description
+	if chapter_name_edit:
+		chapter_name_edit.text = chapter_name
 
 func _on_save_button_pressed():
-	if current_chapter:
-		current_chapter.chapter_name = chapter_name_edit.text
+	if not _check_singleton():
+		return
+		
+	if current_chapter and chapter_name_edit and chapter_description_edit:
+		# CORRIGIDO: Atualizar o nome no dicionário de capítulos se mudou
+		var old_name = current_chapter.chapter_name
+		var new_name = chapter_name_edit.text
+		
+		current_chapter.chapter_name = new_name
 		current_chapter.chapter_description = chapter_description_edit.text
+		
+		# Se o nome mudou, atualizar a chave no dicionário
+		if old_name != new_name and VisualNovelSingleton.chapters.has(old_name):
+			VisualNovelSingleton.chapters.erase(old_name)
+			VisualNovelSingleton.chapters[new_name] = current_chapter
 		
 		# Atualizar a lista de capítulos
 		_refresh_chapter_list()
 		
 		# Salvar todos os capítulos
-		_save_chapters()
+		VisualNovelSingleton.save_chapters()
+		print("Capítulos salvos!")
 
 func _on_load_button_pressed():
-	_load_chapters()
+	if not _check_singleton():
+		return
+		
+	VisualNovelSingleton.load_chapters()
 	_refresh_chapter_list()
+	print("Capítulos carregados!")
 
 func _on_chapter_selected(index):
+	if not _check_singleton():
+		return
+		
+	if index < 0 or index >= chapter_list.item_count:
+		return
+		
 	var chapter_name = chapter_list.get_item_text(index)
 	if VisualNovelSingleton.chapters.has(chapter_name):
 		current_chapter = VisualNovelSingleton.chapters[chapter_name]
-		graph_edit._update_chapter_editor(current_chapter)
+		_update_chapter_ui()
+		
+		if graph_edit and graph_edit.has_method("_update_chapter_editor"):
+			graph_edit._update_chapter_editor(current_chapter)
 	else:
 		current_chapter = null
 		_clear_chapter_editor()
 
+# Método para verificar se o VisualNovelSingleton está disponível
+func _check_singleton() -> bool:
+	if not VisualNovelSingleton:
+		push_error("VisualNovelSingleton não está disponível!")
+		return false
+	return true
+
 # Métodos para atualizar a UI
 func _refresh_chapter_list():
+	print("_refresh_chapter_list chamado")
+	
+	if not chapter_list:
+		print("chapter_list é null!")
+		return
+		
+	if not _check_singleton():
+		print("VisualNovelSingleton não disponível")
+		return
+	
 	chapter_list.clear()
 	
-	for chapter_name in VisualNovelSingleton.chapters:
+	print("Atualizando lista de capítulos. Total: ", VisualNovelSingleton.chapters.size())
+	
+	# CORRIGIDO: Garantir que estamos iterando corretamente
+	var chapter_names = VisualNovelSingleton.chapters.keys()
+	for chapter_name in chapter_names:
 		chapter_list.add_item(chapter_name)
+		print("Adicionado capítulo à lista: ", chapter_name)
+	
+	print("Lista atualizada. Items na lista: ", chapter_list.item_count)
 
-func _create_dialogue_editor(parent, block_data):
-	# Adicionar editor para blocos de diálogo
-	var char_label = Label.new()
-	char_label.text = "Personagem:"
-	parent.add_child(char_label)
-	
-	var char_edit = LineEdit.new()
-	char_edit.text = block_data.character_name
-	char_edit.placeholder_text = "Nome do personagem"
-	parent.add_child(char_edit)
-	
-	var expr_label = Label.new()
-	expr_label.text = "Expressão:"
-	parent.add_child(expr_label)
-	
-	var expr_edit = LineEdit.new()
-	expr_edit.text = block_data.character_expression
-	expr_edit.placeholder_text = "Expressão do personagem"
-	parent.add_child(expr_edit)
-	
-	var pos_label = Label.new()
-	pos_label.text = "Posição (X, Y):"
-	parent.add_child(pos_label)
-	
-	var pos_container = HBoxContainer.new()
-	parent.add_child(pos_container)
-	
-	var pos_x_edit = SpinBox.new()
-	pos_x_edit.min_value = 0.0
-	pos_x_edit.max_value = 1.0
-	pos_x_edit.step = 0.1
-	pos_x_edit.value = block_data.character_position.x
-	pos_container.add_child(pos_x_edit)
-	
-	var pos_y_edit = SpinBox.new()
-	pos_y_edit.min_value = 0.0
-	pos_y_edit.max_value = 1.0
-	pos_y_edit.step = 0.1
-	pos_y_edit.value = block_data.character_position.y
-	pos_container.add_child(pos_y_edit)
-	
-	var text_label = Label.new()
-	text_label.text = "Texto:"
-	parent.add_child(text_label)
-	
-	var text_edit = TextEdit.new()
-	text_edit.text = block_data.text
-	text_edit.placeholder_text = "Digite o texto do diálogo aqui"
-	text_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	parent.add_child(text_edit)
-	
-	var next_label = Label.new()
-	next_label.text = "Próximo bloco:"
-	parent.add_child(next_label)
-	
-	var next_edit = LineEdit.new()
-	next_edit.text = block_data.next_block_id
-	next_edit.placeholder_text = "ID do próximo bloco"
-	parent.add_child(next_edit)
-	
-	# Botão para salvar alterações
-	var save_button = Button.new()
-	save_button.text = "Salvar Alterações"
-	save_button.pressed.connect(func():
-		# Atualizar dados do bloco
-		block_data.character_name = char_edit.text
-		block_data.character_expression = expr_edit.text
-		block_data.character_position = Vector2(pos_x_edit.value, pos_y_edit.value)
-		block_data.text = text_edit.text
-		block_data.next_block_id = next_edit.text
+func _update_chapter_ui():
+	if not current_chapter:
+		return
 		
-		# Atualizar o bloco no capítulo
-		if current_chapter:
-			current_chapter.update_block(block_editor.current_block_id, block_data)
-			
-			# Atualizar o grafo
-			graph_edit._update_chapter_editor(current_chapter)
-	)
-	parent.add_child(save_button)
-
-func _create_choice_editor(parent, block_data):
-	# Adicionar editor para blocos de escolha
-	var choices_label = Label.new()
-	choices_label.text = "Escolhas:"
-	parent.add_child(choices_label)
-	
-	var choices_container = VBoxContainer.new()
-	parent.add_child(choices_container)
-	
-	# Adicionar as escolhas existentes
-	for i in range(block_data.choices.size()):
-		var choice = block_data.choices[i]
-		var choice_container = HBoxContainer.new()
-		choices_container.add_child(choice_container)
-		
-		var choice_text = LineEdit.new()
-		choice_text.text = choice.text
-		choice_text.placeholder_text = "Texto da escolha"
-		choice_text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		choice_container.add_child(choice_text)
-		
-		var next_id = LineEdit.new()
-		next_id.text = choice.next_block_id
-		next_id.placeholder_text = "Próximo bloco"
-		next_id.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		choice_container.add_child(next_id)
-		
-		var delete_button = Button.new()
-		delete_button.text = "X"
-		delete_button.pressed.connect(func():
-			# Remover a escolha
-			block_data.choices.remove_at(i)
-			
-			# Atualizar o editor
-			block_editor._update_block_editor(graph_edit.name, current_chapter)
-			
-			# Atualizar o bloco no capítulo
-			if current_chapter:
-				current_chapter.update_block(block_editor.current_block_id, block_data)
-				
-				# Atualizar o grafo
-				graph_edit._update_chapter_editor(current_chapter)
-		)
-		choice_container.add_child(delete_button)
-	
-	# Botão para adicionar nova escolha
-	var add_choice_button = Button.new()
-	add_choice_button.text = "Adicionar Escolha"
-	add_choice_button.pressed.connect(func():
-		# Adicionar nova escolha
-		block_data.choices.append({
-			"text": "Nova escolha",
-			"next_block_id": ""
-		})
-		
-		# Atualizar o editor
-		block_editor._update_block_editor(graph_edit.name, current_chapter)
-		
-		# Atualizar o bloco no capítulo
-		if current_chapter:
-			current_chapter.update_block(block_editor.current_block_id, block_data)
-			
-			# Atualizar o grafo
-			graph_edit._update_chapter_editor(current_chapter)
-	)
-	parent.add_child(add_choice_button)
-	
-	# Botão para salvar alterações
-	var save_button = Button.new()
-	save_button.text = "Salvar Alterações"
-	save_button.pressed.connect(func():
-		# Atualizar dados das escolhas
-		for i in range(block_data.choices.size()):
-			var choice_container = choices_container.get_child(i)
-			var choice_text = choice_container.get_child(0)
-			var next_id = choice_container.get_child(1)
-			
-			block_data.choices[i].text = choice_text.text
-			block_data.choices[i].next_block_id = next_id.text
-		
-		# Atualizar o bloco no capítulo
-		if current_chapter:
-			current_chapter.update_block(block_editor.current_block_id, block_data)
-			
-			# Atualizar o grafo
-			graph_edit._update_chapter_editor(current_chapter)
-	)
-	parent.add_child(save_button)
+	if chapter_name_edit:
+		chapter_name_edit.text = current_chapter.chapter_name
+	if chapter_description_edit:
+		chapter_description_edit.text = current_chapter.chapter_description
 
 func _is_connection_valid(from_block, to_block, from_port) -> bool:
 	# Não permitir conectar a um bloco start
@@ -310,92 +236,48 @@ func _on_connection_to_empty(from_node, from_port, release_position):
 		"graph_position": release_position
 	}
 	
-	current_chapter.add_block(new_block_id, new_block_data)
-	
-	# Conectar ao novo bloco
-	graph_edit._on_connection_request(from_node, from_port, new_block_id, 0)
-	graph_edit._update_chapter_editor(current_chapter)
+	if current_chapter:
+		current_chapter.add_block(new_block_id, new_block_data)
+		
+		# Conectar ao novo bloco
+		if graph_edit:
+			graph_edit._on_connection_request(from_node, from_port, new_block_id, 0)
+			graph_edit._update_chapter_editor(current_chapter)
 
 func _clear_chapter_editor():
-	chapter_name_edit.text = ""
-	chapter_description_edit.text = ""
+	if chapter_name_edit:
+		chapter_name_edit.text = ""
+	if chapter_description_edit:
+		chapter_description_edit.text = ""
 	
-	# Limpar o grafo
-	for child in graph_edit.get_children():
-		if child is GraphNode:
-			graph_edit.remove_child(child)
-			child.queue_free()
+	# Limpar o grafo se existir
+	if graph_edit:
+		for child in graph_edit.get_children():
+			if child is GraphNode:
+				graph_edit.remove_child(child)
+				child.queue_free()
 	
-	# Limpar o editor de blocos
-	block_editor._clear_block_editor()
+	# Limpar o editor de blocos se existir
+	if block_editor and block_editor.has_method("_clear_block_editor"):
+		block_editor._clear_block_editor()
 
 # Métodos para persistência dos dados
 func _save_chapters():
-	# Cria a pasta se ela não existir
-	var dir = DirAccess.open("res://")
-	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
-		dir.make_dir("res://addons/visual_novel_editor/data")
-	
-	# Preparar os dados para salvar
-	var save_data = {}
-	for chapter_name in VisualNovelSingleton.chapters:
-		var chapter = VisualNovelSingleton.chapters[chapter_name]
-		
-		# Converter o resource para um formato serializável
-		var chapter_data = {
-			"chapter_name": chapter.chapter_name,
-			"chapter_description": chapter.chapter_description,
-			"start_block_id": chapter.start_block_id,
-			"blocks": chapter.blocks
-		}
-		
-		save_data[chapter_name] = chapter_data
-	
-	# Salvar os dados em um arquivo JSON
-	var json_string = JSON.stringify(save_data)
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/chapters.json", FileAccess.WRITE)
-	file.store_string(json_string)
-	file.close()
-	
-	print("Chapters saved successfully!")
+	# Esta função duplica a funcionalidade do VisualNovelSingleton
+	# Melhor usar diretamente o singleton
+	if _check_singleton():
+		VisualNovelSingleton.save_chapters()
 
 func _load_chapters():
-	# Verificar se o arquivo existe
-	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/chapters.json"):
-		print("No chapters file found.")
+	if not _check_singleton():
 		return
-	
-	# Carregar o arquivo JSON
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/chapters.json", FileAccess.READ)
-	var json_string = file.get_as_text()
-	file.close()
-	
-	var json = JSON.new()
-	var error = json.parse(json_string)
-	if error != OK:
-		print("JSON Parse Error: ", json.get_error_message(), " at line ", json.get_error_line())
-		return
-	
-	var chapters_data = json.get_data()
-	
-	# Limpar os capítulos existentes
-	VisualNovelSingleton.chapters.clear()
-	
-	# Criar objetos ChapterResource para cada capítulo carregado
-	for chapter_name in chapters_data:
-		var chapter_data = chapters_data[chapter_name]
 		
-		var chapter = ChapterResource.new()
-		chapter.chapter_name = chapter_data["chapter_name"]
-		chapter.chapter_description = chapter_data["chapter_description"]
-		chapter.start_block_id = chapter_data["start_block_id"]
-		chapter.blocks = chapter_data["blocks"]
-		
-		VisualNovelSingleton.register_chapter(chapter)
-	
-	print("Chapters loaded successfully!")
+	VisualNovelSingleton.load_chapters()
 
 func _update_connections() -> void:
+	if not graph_edit:
+		return
+		
 	# Limpar todas as conexões visuais primeiro
 	graph_edit.clear_connections()
 	
@@ -430,11 +312,13 @@ func _on_delete_nodes_request(nodes):
 	for node_name in nodes:
 		current_chapter.remove_block(node_name)
 	
-	graph_edit._update_chapter_editor(current_chapter)
+	if graph_edit:
+		graph_edit._update_chapter_editor(current_chapter)
 
 # Métodos para adicionar novos blocos ao capítulo atual
 func add_dialogue_block():
 	if not current_chapter:
+		push_error("Nenhum capítulo selecionado!")
 		return
 		
 	var block_id = "dialogue_" + str(Time.get_unix_time_from_system())
@@ -444,17 +328,23 @@ func add_dialogue_block():
 		"character_expression": "default",
 		"character_position": Vector2(0.5, 1.0),
 		"text": "Digite o texto aqui...",
-		"next_block_id": ""
+		"next_block_id": "",
+		"graph_position": Vector2(400, 200)
 	}
 	
 	current_chapter.add_block(block_id, block_data)
-	graph_edit._update_chapter_editor(current_chapter)
 	
-	block_editor.current_block_id = block_id
-	block_editor._update_block_editor(graph_edit.name, current_chapter)
+	if graph_edit and graph_edit.has_method("_update_chapter_editor"):
+		graph_edit._update_chapter_editor(current_chapter)
+	
+	if block_editor:
+		block_editor.current_block_id = block_id
+		if block_editor.has_method("_update_block_editor"):
+			block_editor._update_block_editor(graph_edit.name if graph_edit else "", current_chapter)
 
 func add_choice_block():
 	if not current_chapter:
+		push_error("Nenhum capítulo selecionado!")
 		return
 		
 	var block_id = "choice_" + str(Time.get_unix_time_from_system())
@@ -469,11 +359,37 @@ func add_choice_block():
 				"text": "Opção 2",
 				"next_block_id": ""
 			}
-		]
+		],
+		"graph_position": Vector2(400, 200)
 	}
 	
 	current_chapter.add_block(block_id, block_data)
-	graph_edit._update_chapter_editor(current_chapter)
 	
-	block_editor.current_block_id = block_id
-	block_editor._update_block_editor(graph_edit.name, current_chapter)
+	if graph_edit and graph_edit.has_method("_update_chapter_editor"):
+		graph_edit._update_chapter_editor(current_chapter)
+	
+	if block_editor:
+		block_editor.current_block_id = block_id
+		if block_editor.has_method("_update_block_editor"):
+			block_editor._update_block_editor(graph_edit.name if graph_edit else "", current_chapter)
+
+# Função para debug - pode ser chamada para verificar o estado
+func debug_chapters():
+	print("=== DEBUG CHAPTERS ===")
+	if not _check_singleton():
+		print("VisualNovelSingleton não disponível")
+		return
+	
+	print("Total de capítulos: ", VisualNovelSingleton.chapters.size())
+	for chapter_name in VisualNovelSingleton.chapters:
+		print("- ", chapter_name)
+	
+	print("Chapter list node: ", chapter_list)
+	if chapter_list:
+		print("Items na lista: ", chapter_list.item_count)
+	print("======================")
+
+# ADICIONADO: Função para forçar refresh manual (útil para debug)
+func force_refresh():
+	print("Forçando refresh da lista...")
+	_refresh_chapter_list()

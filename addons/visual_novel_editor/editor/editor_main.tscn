@@ -64,6 +64,8 @@ text = "Chapters"
 
 [node name="ItemList" type="ItemList" parent="VBoxContainer/HSplitContainer/ChapterList"]
 layout_mode = 2
+size_flags_vertical = 3
+auto_height = true
 
 [node name="TabContainer" type="TabContainer" parent="VBoxContainer/HSplitContainer"]
 layout_mode = 2
