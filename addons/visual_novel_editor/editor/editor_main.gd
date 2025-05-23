@@ -6,15 +6,13 @@ extends Panel
 @onready var chapter_name_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterNameEdit
 @onready var chapter_description_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterDescriptionEdit
 @onready var graph_edit: ChapterEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/GraphEdit
+#@onready var graph_edit: CustomGraphEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/CustomGraphEditor
 @onready var block_editor: BlockEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/BlockEditor
 
 # Capítulo atual sendo editado
 var current_chapter: ChapterResource = null
 
-func _ready():
-	# REMOVIDO: Verificação que impedia execução no editor
-	# O plugin DEVE executar no editor
-	
+func _ready():	
 	# Conectar sinais
 	$VBoxContainer/Toolbar/AddChapterButton.pressed.connect(_on_add_chapter_button_pressed)
 	$VBoxContainer/Toolbar/DeleteChapterButton.pressed.connect(_on_delete_chapter_button_pressed)
@@ -70,7 +68,10 @@ func _on_add_chapter_button_pressed():
 	new_chapter.chapter_description = "Descrição do capítulo"
 	
 	# Adicionar bloco inicial
-	var start_block_id = "start_" + str(Time.get_unix_time_from_system())
+	# Substituir pontos por underscores na geração de IDs
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var start_block_id = "start_%s" % timestamp
+	
 	var start_block_data = {
 		"type": "start",
 		"graph_position": Vector2(100, 300)
@@ -79,7 +80,7 @@ func _on_add_chapter_button_pressed():
 	new_chapter.start_block_id = start_block_id
 	
 	# Adicionar bloco final
-	var end_block_id = "end_" + str(Time.get_unix_time_from_system())
+	var end_block_id = "end_%s" % timestamp
 	var end_block_data = {
 		"type": "end",
 		"graph_position": Vector2(800, 300)
@@ -122,26 +123,59 @@ func _on_chapter_data_changed(chapter_name:String, chapter_description: String):
 func _on_save_button_pressed():
 	if not _check_singleton():
 		return
-		
-	if current_chapter and chapter_name_edit and chapter_description_edit:
-		# CORRIGIDO: Atualizar o nome no dicionário de capítulos se mudou
-		var old_name = current_chapter.chapter_name
-		var new_name = chapter_name_edit.text
-		
-		current_chapter.chapter_name = new_name
-		current_chapter.chapter_description = chapter_description_edit.text
-		
-		# Se o nome mudou, atualizar a chave no dicionário
-		if old_name != new_name and VisualNovelSingleton.chapters.has(old_name):
-			VisualNovelSingleton.chapters.erase(old_name)
-			VisualNovelSingleton.chapters[new_name] = current_chapter
-		
-		# Atualizar a lista de capítulos
-		_refresh_chapter_list()
-		
-		# Salvar todos os capítulos
-		VisualNovelSingleton.save_chapters()
-		print("Capítulos salvos!")
+	
+	if not current_chapter:
+		push_error("Nenhum capítulo selecionado!")
+		return
+	
+	# Atualizar todas as posições dos blocos
+	if graph_edit:
+		for child in graph_edit.get_children():
+			if child is GraphNode:
+				var block_id = child.name
+				if current_chapter.blocks.has(block_id):
+					current_chapter.blocks[block_id]["graph_position"] = child.position_offset
+	
+	# Atualizar metadados
+	current_chapter.chapter_name = chapter_name_edit.text
+	current_chapter.chapter_description = chapter_description_edit.text
+	
+	# Salvar efetivamente
+	VisualNovelSingleton.save_chapters()
+	
+	# Debug detalhado
+	print("=== ESTADO ATUAL ===")
+	for block_id in current_chapter.blocks:
+		var block = current_chapter.blocks[block_id]
+		print("Bloco: ", block_id)
+		print("Tipo: ", block["type"])
+		print("Posição: ", block.get("graph_position", "N/A"))
+		match block["type"]:
+			"start", "dialogue":
+				print("Próximo: ", block.get("next_block_id", ""))
+			"choice":
+				for i in range(block.get("choices", []).size()):
+					print("Opção ", i, " -> ", block["choices"][i].get("next_block_id", ""))
+	print("====================")
+
+func _debug_print_connections():
+	if not current_chapter:
+		return
+	
+	print("=== CONEXÕES DO CAPÍTULO ===")
+	for block_id in current_chapter.blocks:
+		var block = current_chapter.blocks[block_id]
+		match block["type"]:
+			"start", "dialogue":
+				if block.has("next_block_id"):
+					print(block_id, " -> ", block.next_block_id)
+			"choice":
+				if block.has("choices"):
+					for i in range(block.choices.size()):
+						var choice = block.choices[i]
+						if choice.has("next_block_id"):
+							print(block_id, " [", i, "] -> ", choice.next_block_id)
+	print("============================")
 
 func _on_load_button_pressed():
 	if not _check_singleton():
@@ -163,11 +197,37 @@ func _on_chapter_selected(index):
 		current_chapter = VisualNovelSingleton.chapters[chapter_name]
 		_update_chapter_ui()
 		
-		if graph_edit and graph_edit.has_method("_update_chapter_editor"):
+		if graph_edit:
+			# Limpar seleção atual
+			graph_edit._clear_graph()
+			
+			# Aguardar um frame para limpeza completa
+			await get_tree().process_frame
+			
+			# Carregar novo capítulo
 			graph_edit._update_chapter_editor(current_chapter)
+			
+			# Verificação de consistência
+			print("Verificando consistência após carregamento...")
+			_verify_chapter_consistency()
 	else:
 		current_chapter = null
 		_clear_chapter_editor()
+
+func _verify_chapter_consistency():
+	if not current_chapter or not graph_edit:
+		return
+	
+	# Verificar se todos os blocos no resource existem no GraphEdit
+	for block_id in current_chapter.blocks:
+		if not graph_edit.has_node(block_id):
+			push_error("Bloco no resource não encontrado no GraphEdit: ", block_id)
+	
+	# Verificar se todos os nós no GraphEdit existem no resource
+	for child in graph_edit.get_children():
+		if child is GraphNode:
+			if not current_chapter.blocks.has(child.name):
+				push_error("Nó no GraphEdit não encontrado no resource: ", child.name)
 
 # Método para verificar se o VisualNovelSingleton está disponível
 func _check_singleton() -> bool:
@@ -227,7 +287,8 @@ func _is_connection_valid(from_block, to_block, from_port) -> bool:
 
 func _on_connection_to_empty(from_node, from_port, release_position):
 	# Criar um novo bloco quando arrastar conexão para área vazia
-	var new_block_id = "dialogue_" + str(Time.get_unix_time_from_system())
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var new_block_id = "dialogue_" + timestamp
 	var new_block_data = {
 		"type": "dialogue",
 		"character_name": "Personagem",
@@ -321,7 +382,8 @@ func add_dialogue_block():
 		push_error("Nenhum capítulo selecionado!")
 		return
 		
-	var block_id = "dialogue_" + str(Time.get_unix_time_from_system())
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var block_id = "dialogue_" + timestamp
 	var block_data = {
 		"type": "dialogue",
 		"character_name": "Personagem",
@@ -347,7 +409,8 @@ func add_choice_block():
 		push_error("Nenhum capítulo selecionado!")
 		return
 		
-	var block_id = "choice_" + str(Time.get_unix_time_from_system())
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var block_id = "choice_" + timestamp
 	var block_data = {
 		"type": "choice",
 		"choices": [
@@ -388,6 +451,43 @@ func debug_chapters():
 	if chapter_list:
 		print("Items na lista: ", chapter_list.item_count)
 	print("======================")
+
+# Chamar esta função após carregar um capítulo
+func _verify_block_sync():
+	if not current_chapter or not graph_edit:
+		return
+	
+	print("=== VERIFICAÇÃO DE SINCRONIZAÇÃO ===")
+	
+	# Verificar blocos no resource vs graph
+	var resource_blocks = current_chapter.blocks.keys()
+	var graph_blocks = []
+	
+	for child in graph_edit.get_children():
+		if child is GraphNode:
+			graph_blocks.append(child.name)
+	
+	print("Blocos no ChapterResource: ", resource_blocks)
+	print("Blocos no GraphEdit: ", graph_blocks)
+	
+	# Verificar diferenças
+	var missing_in_graph = []
+	for block_id in resource_blocks:
+		if not graph_blocks.has(str(block_id)):
+			missing_in_graph.append(block_id)
+	
+	var missing_in_resource = []
+	for block_name in graph_blocks:
+		if not resource_blocks.has(block_name):
+			missing_in_resource.append(block_name)
+	
+	if missing_in_graph.size() > 0:
+		push_error("Blocos faltando no GraphEdit: ", missing_in_graph)
+	
+	if missing_in_resource.size() > 0:
+		push_error("Blocos faltando no ChapterResource: ", missing_in_resource)
+	
+	print("=== FIM DA VERIFICAÇÃO ===")
 
 # ADICIONADO: Função para forçar refresh manual (útil para debug)
 func force_refresh():

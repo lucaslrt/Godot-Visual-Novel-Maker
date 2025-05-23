@@ -10,22 +10,40 @@ class_name ChapterResource
 
 # Adicionar um novo bloco ao capítulo
 func add_block(block_id, block_data):
-	# Validar tipos de bloco
-	if block_data["type"] not in ["start", "end", "dialogue", "choice"]:
-		push_error("Tipo de bloco inválido: " + block_data["type"])
+	# Verificar duplicação
+	if blocks.has(block_id):
+		push_error("ID de bloco já existe: ", block_id)
 		return null
 	
+	# Validar estrutura do bloco
+	if not block_data.has("type"):
+		push_error("Bloco sem tipo definido")
+		return null
+	
+	# Inicializar next_block_id conforme o tipo
+	match block_data["type"]:
+		"start", "dialogue":
+			if not block_data.has("next_block_id"):
+				block_data["next_block_id"] = ""
+		
+		"choice":
+			if block_data.has("choices"):
+				for choice in block_data["choices"]:
+					if not choice.has("next_block_id"):
+						choice["next_block_id"] = ""
+	
 	blocks[block_id] = block_data
-	
-	# Se for um bloco start, definir como início
-	if block_data["type"] == "start":
-		start_block_id = block_id
-	# Se for o primeiro bloco e não houver start, definir como início
-	elif blocks.size() == 1 and not has_start_block():
-		start_block_id = block_id
-	
+	notify_property_list_changed()
 	return block_id
 
+func _parse_vector2_string(vector_str: String) -> Vector2:
+	# Remove parênteses e espaços
+	var cleaned = vector_str.replace("(", "").replace(")", "").replace(" ", "")
+	var components = cleaned.split(",")
+	if components.size() == 2:
+		return Vector2(float(components[0]), float(components[1]))
+	return Vector2.ZERO
+	
 func has_start_block():
 	for block in blocks.values():
 		if block["type"] == "start":

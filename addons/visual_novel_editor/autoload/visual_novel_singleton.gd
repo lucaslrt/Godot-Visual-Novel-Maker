@@ -89,7 +89,7 @@ func save_chapters():
 			"chapter_name": chapter.chapter_name,
 			"chapter_description": chapter.chapter_description,
 			"start_block_id": chapter.start_block_id,
-			"blocks": chapter.blocks
+			"blocks": _serialize_blocks(chapter.blocks)
 		}
 		
 		save_data[chapter_name] = chapter_data
@@ -106,6 +106,16 @@ func save_chapters():
 	file.close()
 	
 	print("Capítulos salvos com sucesso! Total: ", save_data.size())
+
+func _serialize_blocks(blocks):
+	var serialized = {}
+	for block_id in blocks:
+		var block = blocks[block_id].duplicate()
+		# Converter Vector2 para formato serializável
+		if block.has("graph_position"):
+			block["graph_position"] = {"x": block["graph_position"].x, "y": block["graph_position"].y}
+		serialized[block_id] = block
+	return serialized
 
 func load_chapters():
 	print("Carregando capítulos...")

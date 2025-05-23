@@ -81,7 +81,8 @@ func _on_add_dialogue_pressed():
 	if not current_chapter or not is_instance_valid(self):
 		return
 	
-	var block_id = "dialogue_" + str(Time.get_unix_time_from_system())
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var block_id = "dialogue_" + timestamp
 	var block_data = {
 		"type": "dialogue",
 		"character_name": "Personagem",
@@ -99,7 +100,8 @@ func _on_add_choice_pressed():
 	if not current_chapter or not is_instance_valid(self):
 		return
 	
-	var block_id = "choice_" + str(Time.get_unix_time_from_system())
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var block_id = "choice_" + timestamp
 	var block_data = {
 		"type": "choice",
 		"choices": [
@@ -114,61 +116,120 @@ func _on_add_choice_pressed():
 
 func _on_connection_request(from_node, from_port, to_node, to_port):
 	if not current_chapter:
-		return
-		
-	print("Tentando conectar: ", from_node, ":", from_port, " -> ", to_node, ":", to_port)
-	
-	# Permitir a conexão no GraphEdit
-	connect_node(from_node, from_port, to_node, to_port)
-	
-	# Atualizar os dados do capítulo
-	var from_block = current_chapter.blocks.get(from_node)
-	var to_block = current_chapter.blocks.get(to_node, null)
-	
-	if not from_block:
+		push_error("Nenhum capítulo carregado!")
 		return
 	
-	# Impedir conexões inválidas
-	if to_block and to_block["type"] == "start":
-		push_error("Não é possível conectar ao bloco inicial!")
+	# Converter para String explícito se necessário
+	var from_node_str = str(from_node)
+	var to_node_str = str(to_node)
+	
+	print("Tentando conectar: ", from_node_str, ":", from_port, " -> ", to_node_str, ":", to_port)
+	print("Blocos disponíveis no ChapterResource: ", current_chapter.blocks.keys())
+	print("Nós no GraphEdit: ", get_children().filter(func(c): return c is GraphNode).map(func(n): return n.name))
+	
+	# Verificação detalhada da existência dos blocos
+	if not current_chapter.blocks.has(from_node_str):
+		push_error("Bloco origem não encontrado no ChapterResource: ", from_node_str)
+		print("Possíveis causas:")
+		print("- O bloco não foi adicionado corretamente ao ChapterResource")
+		print("- O nome do nó no GraphEdit não corresponde ao ID no ChapterResource")
+		print("- O ChapterResource não foi atualizado após adicionar o bloco")
+		return
+	
+	 # Verificar existência nos dados do capítulo
+	if not current_chapter.blocks.has(from_node_str):
+		push_error("Bloco origem não encontrado no ChapterResource: ", from_node_str)
+		return
+	
+	if not current_chapter.blocks.has(to_node_str):
+		push_error("Bloco destino não encontrado no ChapterResource: ", to_node_str)
+		return
+	
+	# Verificar existência no GraphEdit (convertendo para NodePath)
+	if not has_node(NodePath(from_node_str)):
+		push_error("Bloco origem não encontrado no GraphEdit: ", from_node_str)
+		return
+	
+	if not has_node(NodePath(to_node_str)):
+		push_error("Bloco destino não encontrado no GraphEdit: ", to_node_str)
+		return
+	
+	# Restante da função usando as strings originais para conexão
+	if connect_node(from_node, from_port, to_node, to_port) != OK:
+		push_error("Falha na conexão visual")
+		return
+	
+	# Atualizar dados (usando strings)
+	var from_block = current_chapter.blocks[from_node_str]
+	var to_block = current_chapter.blocks[to_node_str]
+	
+	# Validações de tipo
+	if to_block["type"] == "start":
+		disconnect_node(from_node, from_port, to_node, to_port)
+		push_error("Conexão inválida para bloco start")
 		return
 	
 	if from_block["type"] == "end":
-		push_error("Não é possível conectar a partir do bloco final!")
+		disconnect_node(from_node, from_port, to_node, to_port)
+		push_error("Conexão inválida a partir de bloco end")
 		return
 	
-	match from_block.type:
+	# Atualizar conexão nos dados
+	match from_block["type"]:
 		"start", "dialogue":
 			from_block["next_block_id"] = to_node
+			print("Conexão atualizada: ", from_node, " -> ", to_node)
+		
 		"choice":
-			if from_port > 0 and from_block.has("choices") and from_block.choices.size() > from_port - 1:
-				from_block.choices[from_port - 1]["next_block_id"] = to_node
+			if from_port > 0 and from_block.has("choices"):
+				var choice_index = from_port - 1
+				if choice_index < from_block.choices.size():
+					from_block.choices[choice_index]["next_block_id"] = to_node
+					print("Conexão de choice atualizada: ", from_node, "[", choice_index, "] -> ", to_node)
 	
-	_update_connections()
+	# Forçar atualização
+	current_chapter.notify_property_list_changed()
+
+func _force_chapter_update():
+	if current_chapter:
+		current_chapter.notify_property_list_changed()
+		# Emitir sinal para atualizar UI se necessário
+		emit_signal("change_chapter_ui", current_chapter.chapter_name, current_chapter.chapter_description)
 
 func _on_disconnection_request(from_node, from_port, to_node, to_port):
 	if not current_chapter:
 		return
 	
-	var from_block = current_chapter.blocks.get(from_node)
-	if not from_block:
+	# Verificar se os nós existem no capítulo
+	if not current_chapter.blocks.has(from_node):
+		push_error("Tentativa de desconectar bloco não existente!")
 		return
+	
+	var from_block = current_chapter.blocks[from_node]
 	
 	# Atualizar os dados do bloco
 	match from_block["type"]:
 		"start", "dialogue":
 			from_block["next_block_id"] = ""
+			print("Desconectado: ", from_node)
+		
 		"choice":
 			if from_port < from_block.get("choices", []).size():
 				from_block["choices"][from_port]["next_block_id"] = ""
+				print("Desconectado choice: ", from_node, " porta ", from_port)
+	
+	# Forçar atualização imediata do recurso
+	current_chapter.notify_property_list_changed()
+	ResourceSaver.save(current_chapter, current_chapter.resource_path)
 	
 	disconnect_node(from_node, from_port, to_node, to_port)
 
 func _on_connection_to_empty(from_node, from_port, release_position):
 	if not current_chapter:
 		return
-		
-	var new_block_id = "dialogue_" + str(Time.get_unix_time_from_system())
+	
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var new_block_id = "dialogue_" + timestamp
 	var new_block_data = {
 		"type": "dialogue",
 		"character_name": "Personagem",
@@ -184,41 +245,50 @@ func _on_connection_to_empty(from_node, from_port, release_position):
 func _update_chapter_editor(chapter: ChapterResource):
 	if not is_instance_valid(self) or not chapter:
 		return
-		
+	
+	print("=== INICIANDO ATUALIZAÇÃO DO EDITOR ===")
+	print("Capítulo: ", chapter.chapter_name)
+	print("Blocos a serem carregados: ", chapter.blocks.keys())
+	
 	self.current_chapter = chapter
 	emit_signal("change_chapter_ui", current_chapter.chapter_name, current_chapter.chapter_description)
 	
-	# Salvar as posições ANTES de limpar
-	var saved_positions = {}
-	for child in get_children():
-		if child is GraphNode and is_instance_valid(child):
-			saved_positions[child.name] = child.position_offset
-	
-	# Salvar conexões
-	var saved_connections = get_connection_list()
-	
-	# Limpar o grafo
+	# Limpar grafo existente
 	_clear_graph()
+	await get_tree().process_frame  # Garantir que a limpeza foi completada
 	
-	# Restaurar blocos com posições salvas
+	# Adicionar blocos com verificação
 	for block_id in current_chapter.blocks:
-		var block = current_chapter.blocks[block_id]
+		var block_data = current_chapter.blocks[block_id].duplicate(true)
 		
-		if saved_positions.has(block_id):
-			block["graph_position"] = saved_positions[block_id]
+		# Garantir que o ID está no formato correto
+		var string_id = str(block_id)
+		block_data["id"] = string_id
 		
-		if typeof(block.get("graph_position", Vector2.ZERO)) != TYPE_VECTOR2:
-			block["graph_position"] = Vector2.ZERO
+		# Verificar e corrigir posição
+		if not block_data.has("graph_position") or typeof(block_data["graph_position"]) != TYPE_VECTOR2:
+			block_data["graph_position"] = Vector2.ZERO
 		
-		_add_block_to_graph(block_id, block)
+		print("Adicionando bloco: ", string_id)
+		_add_block_to_graph(string_id, block_data)
 	
-	# Restaurar conexões após um frame
+	# Aguardar dois frames para garantir que todos os nós estão prontos
 	await get_tree().process_frame
-	for conn in saved_connections:
-		if has_node(conn.from_node) and has_node(conn.to_node):
-			connect_node(conn.from_node, conn.from_port, conn.to_node, conn.to_port)
+	await get_tree().process_frame
 	
+	print("Nós após carregamento: ", get_children().filter(func(c): return c is GraphNode).map(func(n): return n.name))
+	
+	# Restaurar conexões
 	_update_connections()
+	print("=== ATUALIZAÇÃO COMPLETA ===")
+
+func _parse_vector2_string(vector_str: String) -> Vector2:
+	# Remove parênteses e espaços
+	var cleaned = vector_str.replace("(", "").replace(")", "").replace(" ", "")
+	var components = cleaned.split(",")
+	if components.size() == 2:
+		return Vector2(float(components[0]), float(components[1]))
+	return Vector2.ZERO
 
 func _update_connections() -> void:
 	if not current_chapter:
@@ -228,21 +298,24 @@ func _update_connections() -> void:
 	
 	for block_id in current_chapter.blocks:
 		var block = current_chapter.blocks[block_id]
+		var block_path = NodePath(str(block_id))  # Converter para NodePath
 		
-		if not has_node(block_id):
+		if not has_node(block_path):
 			continue
 			
 		match block["type"]:
 			"start", "dialogue":
 				if block.has("next_block_id") and not block.next_block_id.is_empty():
-					if has_node(block.next_block_id):
+					var next_path = NodePath(str(block.next_block_id))
+					if has_node(next_path):
 						connect_node(block_id, 0, block.next_block_id, 0)
 			"choice":
 				if block.has("choices"):
 					for i in range(block.choices.size()):
 						var choice = block.choices[i]
 						if choice.has("next_block_id") and not choice.next_block_id.is_empty():
-							if has_node(choice.next_block_id):
+							var next_path = NodePath(str(choice.next_block_id))
+							if has_node(next_path):
 								connect_node(block_id, i + 1, choice.next_block_id, 0)
 
 func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
@@ -256,8 +329,10 @@ func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
 		push_error("Failed to instantiate dialogue block")
 		return
 	
-	node.name = block_id
+	# Garantir que o nome do nó corresponde exatamente ao ID do bloco
+	node.name = str(block_id)  # Conversão explícita para string
 	
+	# Configurar tipo visual do bloco
 	match block_data["type"]:
 		"start":
 			node.theme_type_variation = "GraphNodeStart"
@@ -268,18 +343,21 @@ func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
 		"choice":
 			node.theme_type_variation = "GraphNodeChoice"
 
+	# Configurar dados do bloco
 	node.setup(block_data.duplicate(true))
 	
-	# Conectar sinal com verificação de validade
+	# Conectar sinal de atualização
 	if node.has_signal("block_updated"):
-		node.block_updated.connect(_on_block_updated.bind(block_id))
-
+		node.block_updated.connect(_on_block_updated.bind(str(block_id)))  # Garantir string
+	
+	# Definir posição
 	if block_data.has("graph_position") && typeof(block_data["graph_position"]) == TYPE_VECTOR2:
 		node.position_offset = block_data["graph_position"]
 	else:
 		node.position_offset = _get_new_block_position()
 
 	add_child(node)
+	print("Bloco adicionado ao GraphEdit: ", node.name, " (ID esperado: ", block_id, ")")
 
 func _on_block_updated(new_data, block_id):
 	if not current_chapter or not current_chapter.blocks.has(block_id):
@@ -290,6 +368,9 @@ func _on_block_updated(new_data, block_id):
 		new_data["graph_position"] = node.position_offset
 		if typeof(new_data["graph_position"]) != TYPE_VECTOR2:
 			new_data["graph_position"] = Vector2.ZERO
+	
+	# Garantir que o ID está preservado
+	new_data["id"] = block_id
 	
 	var old_block = current_chapter.blocks[block_id]
 	
