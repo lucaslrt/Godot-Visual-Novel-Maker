@@ -255,24 +255,36 @@ func _update_chapter_editor(chapter: ChapterResource):
 	
 	# Limpar grafo existente
 	_clear_graph()
-	await get_tree().process_frame  # Garantir que a limpeza foi completada
+	await get_tree().process_frame
 	
-	# Adicionar blocos com verificação
+	# Adicionar blocos preservando as posições salvas
 	for block_id in current_chapter.blocks:
 		var block_data = current_chapter.blocks[block_id].duplicate(true)
-		
-		# Garantir que o ID está no formato correto
 		var string_id = str(block_id)
-		block_data["id"] = string_id
 		
-		# Verificar e corrigir posição
-		if not block_data.has("graph_position") or typeof(block_data["graph_position"]) != TYPE_VECTOR2:
-			block_data["graph_position"] = Vector2.ZERO
+		# DEBUG: Verificar posição antes de adicionar
+		print("Bloco ", string_id, " - posição salva: ", block_data.get("graph_position", "NÃO ENCONTRADA"))
+		print("Tipo da posição: ", typeof(block_data.get("graph_position", null)))
 		
-		print("Adicionando bloco: ", string_id)
+		# Corrigir posição se vier como Dictionary (problema de serialização)
+		if block_data.has("graph_position"):
+			var pos = block_data["graph_position"]
+			if typeof(pos) == TYPE_DICTIONARY:
+				if pos.has("x") and pos.has("y"):
+					block_data["graph_position"] = Vector2(pos["x"], pos["y"])
+					print("Convertendo posição de Dictionary para Vector2: ", block_data["graph_position"])
+				else:
+					print("Dictionary de posição inválido, usando nova posição")
+					block_data["graph_position"] = _get_new_block_position()
+			elif typeof(pos) != TYPE_VECTOR2:
+				print("Tipo de posição inválido (", typeof(pos), "), usando nova posição")
+				block_data["graph_position"] = _get_new_block_position()
+		else:
+			print("Posição não encontrada, usando nova posição para bloco ", string_id)
+			block_data["graph_position"] = _get_new_block_position()
+		
 		_add_block_to_graph(string_id, block_data)
 	
-	# Aguardar dois frames para garantir que todos os nós estão prontos
 	await get_tree().process_frame
 	await get_tree().process_frame
 	
@@ -281,14 +293,6 @@ func _update_chapter_editor(chapter: ChapterResource):
 	# Restaurar conexões
 	_update_connections()
 	print("=== ATUALIZAÇÃO COMPLETA ===")
-
-func _parse_vector2_string(vector_str: String) -> Vector2:
-	# Remove parênteses e espaços
-	var cleaned = vector_str.replace("(", "").replace(")", "").replace(" ", "")
-	var components = cleaned.split(",")
-	if components.size() == 2:
-		return Vector2(float(components[0]), float(components[1]))
-	return Vector2.ZERO
 
 func _update_connections() -> void:
 	if not current_chapter:
@@ -329,45 +333,94 @@ func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
 		push_error("Failed to instantiate dialogue block")
 		return
 	
-	# Garantir que o nome do nó corresponde exatamente ao ID do bloco
-	node.name = str(block_id)  # Conversão explícita para string
+	node.name = str(block_id)
 	
-	# Configurar tipo visual do bloco
+	# Configurar tipo visual
 	match block_data["type"]:
-		"start":
-			node.theme_type_variation = "GraphNodeStart"
-		"end":
-			node.theme_type_variation = "GraphNodeEnd"
-		"dialogue":
-			node.theme_type_variation = "GraphNodeDialogue"
-		"choice":
-			node.theme_type_variation = "GraphNodeChoice"
+		"start": node.theme_type_variation = "GraphNodeStart"
+		"end": node.theme_type_variation = "GraphNodeEnd"
+		"dialogue": node.theme_type_variation = "GraphNodeDialogue"
+		"choice": node.theme_type_variation = "GraphNodeChoice"
 
-	# Configurar dados do bloco
 	node.setup(block_data.duplicate(true))
 	
-	# Conectar sinal de atualização
 	if node.has_signal("block_updated"):
-		node.block_updated.connect(_on_block_updated.bind(str(block_id)))  # Garantir string
+		node.block_updated.connect(_on_block_updated.bind(str(block_id)))
 	
-	# Definir posição
-	if block_data.has("graph_position") && typeof(block_data["graph_position"]) == TYPE_VECTOR2:
-		node.position_offset = block_data["graph_position"]
+	# Definir posição - garantindo que é Vector2 e usando a posição salva
+	var saved_position = block_data.get("graph_position", _get_new_block_position())
+	
+	# Garantir que temos uma posição válida como Vector2
+	var final_position: Vector2
+	if typeof(saved_position) == TYPE_VECTOR2:
+		final_position = saved_position
+		print("Definindo posição do bloco ", block_id, " para posição salva: ", final_position)
+	elif typeof(saved_position) == TYPE_DICTIONARY and saved_position.has("x") and saved_position.has("y"):
+		final_position = Vector2(saved_position["x"], saved_position["y"])
+		print("Convertendo Dictionary para Vector2 no bloco ", block_id, ": ", final_position)
+		# Atualizar imediatamente no resource com a posição correta
+		current_chapter.blocks[block_id]["graph_position"] = final_position
 	else:
-		node.position_offset = _get_new_block_position()
-
+		final_position = _get_new_block_position()
+		print("Posição inválida, usando nova posição para bloco ", block_id, ": ", final_position)
+		# Atualizar imediatamente no resource
+		current_chapter.blocks[block_id]["graph_position"] = final_position
+	
+	node.position_offset = final_position
 	add_child(node)
-	print("Bloco adicionado ao GraphEdit: ", node.name, " (ID esperado: ", block_id, ")")
+	
+	# Conectar sinal de arraste
+	if node.has_signal("dragged"):
+		node.dragged.connect(_on_node_dragged.bind(node))
+	else:
+		push_error("Nó não tem sinal 'dragged'!")
+		
+func _on_node_dragged(from: Vector2, to: Vector2, node: GraphNode):
+	if not current_chapter or not node:
+		return
+	
+	var block_id = node.name
+	if current_chapter.blocks.has(block_id):
+		# Salvar a nova posição imediatamente
+		var new_position = Vector2(node.position_offset)
+		current_chapter.blocks[block_id]["graph_position"] = new_position
+		print("Posição atualizada para bloco ", block_id, ": ", new_position)
+		
+		# Forçar salvamento imediato
+		current_chapter.notify_property_list_changed()
+		if current_chapter.resource_path and not current_chapter.resource_path.is_empty():
+			ResourceSaver.save(current_chapter, current_chapter.resource_path)
 
 func _on_block_updated(new_data, block_id):
 	if not current_chapter or not current_chapter.blocks.has(block_id):
 		return
-		
+	
+	print("=== ATUALIZANDO BLOCO ", block_id, " ===")
+	
 	var node = get_node_or_null(block_id)
 	if node and is_instance_valid(node):
-		new_data["graph_position"] = node.position_offset
-		if typeof(new_data["graph_position"]) != TYPE_VECTOR2:
-			new_data["graph_position"] = Vector2.ZERO
+		# PRESERVAR A POSIÇÃO ATUAL DO NÓ
+		var current_position = Vector2(node.position_offset)
+		new_data["graph_position"] = current_position
+		print("Preservando posição atual: ", current_position)
+	else:
+		# Se não conseguimos obter do nó, preservar do bloco antigo
+		var old_block = current_chapter.blocks[block_id]
+		if old_block.has("graph_position"):
+			var old_pos = old_block["graph_position"]
+			# Converter se necessário
+			if typeof(old_pos) == TYPE_DICTIONARY and old_pos.has("x") and old_pos.has("y"):
+				new_data["graph_position"] = Vector2(old_pos["x"], old_pos["y"])
+				print("Convertendo e preservando posição do bloco antigo: ", new_data["graph_position"])
+			elif typeof(old_pos) == TYPE_VECTOR2:
+				new_data["graph_position"] = old_pos
+				print("Preservando posição do bloco antigo: ", old_pos)
+			else:
+				new_data["graph_position"] = _get_new_block_position()
+				print("Posição inválida, usando nova posição: ", new_data["graph_position"])
+		else:
+			new_data["graph_position"] = _get_new_block_position()
+			print("Usando nova posição: ", new_data["graph_position"])
 	
 	# Garantir que o ID está preservado
 	new_data["id"] = block_id
@@ -383,14 +436,32 @@ func _on_block_updated(new_data, block_id):
 			for i in range(min(old_block["choices"].size(), new_data["choices"].size())):
 				new_data["choices"][i]["next_block_id"] = old_block["choices"][i].get("next_block_id", "")
 	
+	# Atualizar o bloco
 	current_chapter.blocks[block_id] = new_data
+	
+	# Forçar salvamento imediato
+	current_chapter.notify_property_list_changed()
+	if current_chapter.resource_path and not current_chapter.resource_path.is_empty():
+		ResourceSaver.save(current_chapter, current_chapter.resource_path)
+		print("Recurso salvo com nova posição: ", new_data["graph_position"])
+	
 	_update_connections()
 
 func _get_new_block_position() -> Vector2:
-	var viewport_center = size / 2
-	if get_viewport():
-		viewport_center = get_viewport().size / 2
-	return scroll_offset + viewport_center - Vector2(200, 100)
+	# Obter o centro da viewport
+	var viewport_size := get_viewport_rect().size if get_viewport() else Vector2(1920, 1080)
+	var viewport_center := Vector2(viewport_size) / 2.0
+	
+	# Calcular posição baseada no scroll atual
+	var base_position := Vector2(scroll_offset) + viewport_center
+	
+	# Adicionar um deslocamento aleatório para evitar sobreposição
+	var random_offset := Vector2(
+		randf_range(-100, 100),
+		randf_range(-50, 50)
+	)
+	
+	return base_position + random_offset
 
 func _clear_graph():
 	for child in get_children():

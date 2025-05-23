@@ -7,6 +7,15 @@ signal block_updated(block_data)
 var block_data = {}
 var editing := false
 
+func _ready():
+	# Conectar sinal de arraste
+	connect("dragged", _on_dragged)
+
+func _on_dragged(from: Vector2, to: Vector2):
+	# Atualizar posição nos dados
+	block_data["graph_position"] = Vector2(position_offset)
+	_emit_update()
+
 func setup(initial_data: Dictionary) -> void:
 	if not Engine.is_editor_hint():
 		return

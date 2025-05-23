@@ -128,35 +128,49 @@ func _on_save_button_pressed():
 		push_error("Nenhum capítulo selecionado!")
 		return
 	
-	# Atualizar todas as posições dos blocos
+	# Atualizar posições antes de salvar
 	if graph_edit:
 		for child in graph_edit.get_children():
-			if child is GraphNode:
+			if child is GraphNode and is_instance_valid(child):
 				var block_id = child.name
 				if current_chapter.blocks.has(block_id):
-					current_chapter.blocks[block_id]["graph_position"] = child.position_offset
+					current_chapter.blocks[block_id]["graph_position"] = Vector2(child.position_offset)
+					print("Salvando posição para ", block_id, ": ", child.position_offset)
 	
-	# Atualizar metadados
+	# Salvar metadados
 	current_chapter.chapter_name = chapter_name_edit.text
 	current_chapter.chapter_description = chapter_description_edit.text
 	
-	# Salvar efetivamente
-	VisualNovelSingleton.save_chapters()
+	# Salvar o recurso
+	var save_result = ResourceSaver.save(current_chapter, current_chapter.resource_path)
+	if save_result != OK:
+		push_error("Falha ao salvar capítulo: ", save_result)
+	else:
+		print("Capítulo salvo com sucesso em: ", current_chapter.resource_path)
 	
 	# Debug detalhado
-	print("=== ESTADO ATUAL ===")
+	_print_chapter_debug_info()
+
+func _print_chapter_debug_info():
+	print("=== DEBUG DO CAPÍTULO ===")
+	print("Nome: ", current_chapter.chapter_name)
+	print("Caminho: ", current_chapter.resource_path)
+	print("Blocos: ", current_chapter.blocks.size())
+	
 	for block_id in current_chapter.blocks:
 		var block = current_chapter.blocks[block_id]
-		print("Bloco: ", block_id)
-		print("Tipo: ", block["type"])
+		print("\nBloco: ", block_id)
+		print("Tipo: ", block.get("type", "desconhecido"))
 		print("Posição: ", block.get("graph_position", "N/A"))
-		match block["type"]:
+		print("Tipo da posição: ", typeof(block.get("graph_position")))
+		
+		match block.get("type"):
 			"start", "dialogue":
 				print("Próximo: ", block.get("next_block_id", ""))
 			"choice":
 				for i in range(block.get("choices", []).size()):
-					print("Opção ", i, " -> ", block["choices"][i].get("next_block_id", ""))
-	print("====================")
+					print("Escolha ", i, " -> ", block["choices"][i].get("next_block_id", ""))
+	print("========================")
 
 func _debug_print_connections():
 	if not current_chapter:
