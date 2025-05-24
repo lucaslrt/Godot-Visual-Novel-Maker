@@ -27,10 +27,12 @@ func add_block(block_id, block_data):
 				block_data["next_block_id"] = ""
 		
 		"choice":
-			if block_data.has("choices"):
-				for choice in block_data["choices"]:
-					if not choice.has("next_block_id"):
-						choice["next_block_id"] = ""
+			if not block_data.has("choices"):
+				block_data["choices"] = []
+			# Garantir que cada escolha tem next_block_id
+			for choice in block_data["choices"]:
+				if not choice.has("next_block_id"):
+					choice["next_block_id"] = ""
 	
 	blocks[block_id] = block_data
 	notify_property_list_changed()

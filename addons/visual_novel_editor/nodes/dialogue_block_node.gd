@@ -64,38 +64,58 @@ func _configure_slots():
 		"start":
 			title = "INÍCIO"
 			set_slot(0, 
-				false, 0, Color(0, 0, 0, 0),  # Sem entrada
-				true, 0, Color(0.2, 0.8, 0.2)  # Saída verde
+				false, 0, Color(0, 0, 0, 0),       # Sem entrada para start
+				true, 0, Color(0.2, 0.8, 0.2)     # Saída verde
 			)
 		
 		"end":
 			title = "FIM"
 			set_slot(0, 
-				true, 0, Color(0.8, 0.2, 0.2),  # Entrada vermelha
-				false, 0, Color(0, 0, 0, 0)     # Sem saída
+				true, 0, Color(0.8, 0.2, 0.2),    # Entrada vermelha (permite múltiplas)
+				false, 0, Color(0, 0, 0, 0)       # Sem saída
 			)
 		
 		"dialogue":
 			title = "Diálogo: " + block_data.get("character_name", "Nenhum")
 			set_slot(0, 
-				true, 0, Color(0.3, 0.3, 0.8),  # Entrada azul
-				true, 0, Color(0.8, 0.3, 0.3)   # Saída vermelha
+				true, 0, Color(0.3, 0.3, 0.8),    # Entrada azul (permite múltiplas)
+				true, 0, Color(0.8, 0.3, 0.3)     # Saída vermelha
 			)
 		
 		"choice":
 			title = "Escolha"
-			# Slot de entrada principal
+			var choices = block_data.get("choices", [])
+			
+			# Slot de entrada principal (permite múltiplas conexões)
 			set_slot(0, 
-				true, 0, Color(0.3, 0.3, 0.8),  # Entrada azul
-				false, 0, Color(0, 0, 0, 0)     # Sem saída
+				true, 0, Color(0.3, 0.3, 1),    # Entrada azul
+				false, 0, Color(0, 0, 0, 0)       # Sem saída no slot 0
 			)
 			
-			# Slots para cada escolha
-			for i in range(block_data.get("choices", []).size()):
-				set_slot(i + 1, 
-					false, 0, Color(0, 0, 0, 0),     # Sem entrada
-					true, 0, Color(0.8, 0.8, 0.2)    # Saída amarela
+			# Cores do gradiente amarelo->escuro
+			var base_yellow = Color(0.95, 0.95, 0.3)  # Amarelo bem claro
+			var dark_yellow = Color(0.5, 0.5, 0.1)    # Amarelo escuro
+			var color_step = 1.0 / max(choices.size(), 1)
+			
+			# Criar um slot de saída para cada escolha
+			for i in range(choices.size()):
+				var slot_idx = i
+				
+				# Interpolação linear entre as cores
+				var slot_color = base_yellow.lerp(dark_yellow, color_step * i)
+				
+				set_slot(slot_idx, 
+					false, 0, Color(0, 0, 0, 0), 
+					true, 0, slot_color
 				)
+				
+				# Adicionar marcador visual para o slot
+				var slot_marker = Control.new()
+				slot_marker.name = "SlotMarker_%d" % slot_idx
+				slot_marker.custom_minimum_size = Vector2(0, 20)
+				add_child(slot_marker)
+				move_child(slot_marker, i)
+
 
 func _setup_preview_ui(parent: Control) -> void:
 	match block_data["type"]:
@@ -148,16 +168,35 @@ func _setup_preview_ui(parent: Control) -> void:
 			var choice_vbox = VBoxContainer.new()
 			parent.add_child(choice_vbox)
 			
-			for choice in block_data.get("choices", []):
+			var choices = block_data.get("choices", [])
+			
+			# Cores do gradiente amarelo->escuro
+			var base_yellow = Color(0.95, 0.95, 0.3)  # Amarelo bem claro
+			var dark_yellow = Color(0.5, 0.5, 0.1)    # Amarelo escuro
+			var color_step = 1.0 / max(choices.size(), 1)
+			
+			for i in range(choices.size()):
+				var choice = choices[i]
 				var hbox = HBoxContainer.new()
 				choice_vbox.add_child(hbox)
 				
+				# Interpolação linear entre as cores
+				var slot_color = base_yellow.lerp(dark_yellow, color_step * i)
+				
+				# Indicador visual do slot de saída
+				var slot_indicator = ColorRect.new()
+				slot_indicator.color = slot_color
+				slot_indicator.custom_minimum_size = Vector2(10, 10)
+				hbox.add_child(slot_indicator)
+				
 				var label = Label.new()
 				label.text = "• " + choice.get("text", "")
+				label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 				hbox.add_child(label)
 				
 				var next_label = Label.new()
-				next_label.text = "→ " + choice.get("next_block_id", "")
+				next_label.text = "→ " + choice.get("next_block_id", "Nenhum")
+				next_label.modulate = Color(0.7, 0.7, 0.7)
 				hbox.add_child(next_label)
 
 func _setup_edit_ui(parent: Control) -> void:
@@ -246,15 +285,6 @@ func _setup_edit_ui(parent: Control) -> void:
 				block_data["text"] = text_edit.text
 				_emit_update()
 			)
-			if not block_data.has("character_position") or typeof(block_data.character_position) != TYPE_VECTOR2:
-				block_data["character_position"] = Vector2(0.5, 1.0)
-				
-				pos_x = SpinBox.new()
-				pos_x.min_value = 0
-				pos_x.max_value = 1
-				pos_x.step = 0.1
-				pos_x.value = block_data.character_position.x
-			
 			parent.add_child(text_edit)
 		
 		"choice":
@@ -271,10 +301,17 @@ func _setup_edit_ui(parent: Control) -> void:
 			var choices_vbox = VBoxContainer.new()
 			choices_scroll.add_child(choices_vbox)
 			
-			for i in range(block_data.choices.size()):
-				var choice = block_data.choices[i]
+			var choices = block_data.get("choices", [])
+			for i in range(choices.size()):
+				var choice = choices[i]
 				var hbox = HBoxContainer.new()
 				choices_vbox.add_child(hbox)
+				
+				# Indicador visual do slot
+				var slot_indicator = ColorRect.new()
+				slot_indicator.color = Color(0.8, 0.8, 0.2)
+				slot_indicator.custom_minimum_size = Vector2(15, 15)
+				hbox.add_child(slot_indicator)
 				
 				var text_edit = LineEdit.new()
 				text_edit.text = choice.get("text", "")
@@ -284,16 +321,6 @@ func _setup_edit_ui(parent: Control) -> void:
 					_emit_update()
 				)
 				hbox.add_child(text_edit)
-				
-				var next_edit = LineEdit.new()
-				next_edit.text = choice.get("next_block_id", "")
-				next_edit.placeholder_text = "Próximo bloco"
-				next_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-				next_edit.text_changed.connect(func(text, idx=i):
-					block_data.choices[idx]["next_block_id"] = text
-					_emit_update()
-				)
-				hbox.add_child(next_edit)
 				
 				var delete_btn = Button.new()
 				delete_btn.text = "X"

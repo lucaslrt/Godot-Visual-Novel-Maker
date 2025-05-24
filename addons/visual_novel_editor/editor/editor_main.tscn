@@ -66,8 +66,9 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 1
+item_count = 2
 item_0/text = "Novo Capítulo 1"
+item_1/text = "Novo Capítulo 2"
 
 [node name="TabContainer" type="TabContainer" parent="VBoxContainer/HSplitContainer"]
 layout_mode = 2

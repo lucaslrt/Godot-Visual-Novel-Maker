@@ -55,15 +55,36 @@ func _create_safe_callable() -> Callable:
 func _setup_theme():
 	var curr_theme = Theme.new()
 	
+	# Estilo para nós
+	var node_style = StyleBoxFlat.new()
+	node_style.bg_color = Color(0.15, 0.15, 0.15)
+	node_style.border_color = Color(0.5, 0.5, 0.5)
+	node_style.border_width_top = 2
+	node_style.border_width_bottom = 2
+	node_style.border_width_left = 2
+	node_style.border_width_right = 2
+	
+	curr_theme.set_stylebox("panel", "GraphNode", node_style)
+	
 	# Estilo para nó de início
-	var start_style = StyleBoxFlat.new()
-	start_style.bg_color = Color(0.2, 0.8, 0.2)
+	var start_style = node_style.duplicate()
+	start_style.bg_color = Color(0.2, 0.8, 0.2, 0.8)
 	curr_theme.set_stylebox("panel", "GraphNodeStart", start_style)
 	
 	# Estilo para nó de fim
-	var end_style = StyleBoxFlat.new()
-	end_style.bg_color = Color(0.8, 0.2, 0.2)
+	var end_style = node_style.duplicate()
+	end_style.bg_color = Color(0.8, 0.2, 0.2, 0.8)
 	curr_theme.set_stylebox("panel", "GraphNodeEnd", end_style)
+	
+	# Estilo para nó de diálogo
+	var dialogue_style = node_style.duplicate()
+	dialogue_style.bg_color = Color(0.2, 0.2, 0.8, 0.8)
+	curr_theme.set_stylebox("panel", "GraphNodeDialogue", dialogue_style)
+	
+	# Estilo para nó de escolha
+	var choice_style = node_style.duplicate()
+	choice_style.bg_color = Color(0.8, 0.8, 0.2, 0.8)
+	curr_theme.set_stylebox("panel", "GraphNodeChoice", choice_style)
 	
 	# Aplicar tema
 	theme = curr_theme
@@ -219,10 +240,10 @@ func _on_disconnection_request(from_node, from_port, to_node, to_port):
 				print("Desconectado choice: ", from_node, " porta ", from_port)
 	
 	# Forçar atualização imediata do recurso
+	disconnect_node(from_node, from_port, to_node, to_port)
 	current_chapter.notify_property_list_changed()
 	ResourceSaver.save(current_chapter, current_chapter.resource_path)
 	
-	disconnect_node(from_node, from_port, to_node, to_port)
 
 func _on_connection_to_empty(from_node, from_port, release_position):
 	if not current_chapter:
@@ -285,7 +306,6 @@ func _update_chapter_editor(chapter: ChapterResource):
 		
 		_add_block_to_graph(string_id, block_data)
 	
-	await get_tree().process_frame
 	await get_tree().process_frame
 	
 	print("Nós após carregamento: ", get_children().filter(func(c): return c is GraphNode).map(func(n): return n.name))
