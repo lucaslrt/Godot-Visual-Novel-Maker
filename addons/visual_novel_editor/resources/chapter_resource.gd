@@ -3,10 +3,17 @@
 extends Resource
 class_name ChapterResource
 
+
+@export var chapter_id: String = ""  # ID único do capítulo
 @export var chapter_name: String = "New Chapter"
 @export var chapter_description: String = ""
 @export var start_block_id: String = ""
 @export var blocks: Dictionary = {}
+
+func _init():
+	# Gerar um UUID se não existir
+	if chapter_id.is_empty():
+		chapter_id = UUID.v4()
 
 # Adicionar um novo bloco ao capítulo
 func add_block(block_id, block_data):

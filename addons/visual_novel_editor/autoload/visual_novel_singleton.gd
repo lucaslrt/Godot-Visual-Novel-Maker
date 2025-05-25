@@ -28,11 +28,7 @@ func register_chapter(chapter: ChapterResource) -> void:
 		return
 	
 	print("Registrando capítulo: ", chapter.chapter_name)
-	chapters[chapter.chapter_name] = chapter
-	
-	# CORRIGIDO: Debug adicional
-	print("Total de capítulos após registro: ", chapters.size())
-	print("Chaves no dicionário: ", chapters.keys())
+	chapters[chapter.chapter_id] = chapter  # Usando ID como chave
 	
 	# Salvar automaticamente apenas se estivermos no editor
 	if Engine.is_editor_hint():
@@ -78,21 +74,22 @@ func save_chapters():
 	
 	# Preparar os dados para salvar
 	var save_data = {}
-	for chapter_name in chapters:
-		var chapter = chapters[chapter_name]
+	for chapter_id in chapters:
+		var chapter = chapters[chapter_id]
 		
 		if not chapter:
 			continue
 		
 		# Converter o resource para um formato serializável
 		var chapter_data = {
+			"chapter_id": chapter.chapter_id,  # Incluir o ID na serialização
 			"chapter_name": chapter.chapter_name,
 			"chapter_description": chapter.chapter_description,
 			"start_block_id": chapter.start_block_id,
 			"blocks": _serialize_blocks(chapter.blocks)
 		}
 		
-		save_data[chapter_name] = chapter_data
+		save_data[chapter_id] = chapter_data  # Usar ID como chave
 	
 	# Salvar os dados em um arquivo JSON
 	var json_string = JSON.stringify(save_data, "\t")
@@ -123,7 +120,6 @@ func load_chapters():
 	# Verificar se o arquivo existe
 	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/chapters.json"):
 		print("Arquivo de capítulos não encontrado. Iniciando com lista vazia.")
-		# CORRIGIDO: Inicializar com dicionário vazio ao invés de retornar
 		chapters = {}
 		return
 	
@@ -159,20 +155,20 @@ func load_chapters():
 	chapters.clear()
 	
 	# Criar objetos ChapterResource para cada capítulo carregado
-	for chapter_name in chapters_data:
-		var chapter_data = chapters_data[chapter_name]
+	for chapter_id in chapters_data:
+		var chapter_data = chapters_data[chapter_id]
 		
 		var chapter = ChapterResource.new()
+		chapter.chapter_id = chapter_id  # Definir o ID
 		chapter.chapter_name = chapter_data.get("chapter_name", "")
 		chapter.chapter_description = chapter_data.get("chapter_description", "")
 		chapter.start_block_id = chapter_data.get("start_block_id", "")
 		chapter.blocks = chapter_data.get("blocks", {})
 		
-		chapters[chapter_name] = chapter
+		chapters[chapter.chapter_id] = chapter  # Usar ID como chave
 		
 	print("Capítulos carregados com sucesso! Total: ", chapters.size())
-	# ADICIONADO: Debug das chaves carregadas
-	print("Chaves carregadas: ", chapters.keys())
+	#print("Chaves carregadas: ", chapters.keys())
 
 func save_characters():
 	# Criar a pasta se ela não existir

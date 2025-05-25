@@ -60,12 +60,12 @@ func _on_add_chapter_button_pressed():
 	if not _check_singleton():
 		return
 	
-	var new_chapter = ChapterResource.new()
+	var new_chapter = ChapterResource.new()  # O ID é gerado automaticamente no _init
 	var chapter_name = "Novo Capítulo " + str(chapter_list.item_count + 1)
 	new_chapter.chapter_name = chapter_name
 	new_chapter.chapter_description = "Descrição do capítulo"
 	
-	# CORREÇÃO: Definir o resource_path no momento da criação
+	# Definir o resource_path baseado no ID
 	_ensure_chapter_resource_path(new_chapter)
 	
 	# Adicionar bloco inicial
@@ -135,7 +135,7 @@ func _on_save_button_pressed():
 		push_error("Nenhum capítulo selecionado!")
 		return
 	
-	# CORREÇÃO: Garantir que o resource_path existe antes de tentar salvar
+	# Garantir que o resource_path existe antes de tentar salvar
 	_ensure_chapter_resource_path(current_chapter)
 	
 	# Atualizar posições antes de salvar
@@ -172,7 +172,7 @@ func _on_save_button_pressed():
 	# Debug detalhado
 	_print_chapter_debug_info()
 
-# NOVA FUNÇÃO: Garantir que o capítulo tem um resource_path válido
+# Garantir que o capítulo tem um resource_path válido
 func _ensure_chapter_resource_path(chapter: ChapterResource):
 	if not chapter:
 		return
@@ -183,19 +183,8 @@ func _ensure_chapter_resource_path(chapter: ChapterResource):
 		if not dir.dir_exists("res://addons/visual_novel_editor/data/chapters"):
 			dir.make_dir_recursive("res://addons/visual_novel_editor/data/chapters")
 		
-		# Gerar nome de arquivo baseado no nome do capítulo
-		var safe_name = chapter.chapter_name.to_snake_case().replace(" ", "_")
-		if safe_name.is_empty():
-			safe_name = "chapter_" + str(Time.get_unix_time_from_system())
-		
-		var file_path = "res://addons/visual_novel_editor/data/chapters/" + safe_name + ".tres"
-		
-		# Se o arquivo já existe, adicionar um número
-		var counter = 1
-		while FileAccess.file_exists(file_path):
-			file_path = "res://addons/visual_novel_editor/data/chapters/" + safe_name + "_" + str(counter) + ".tres"
-			counter += 1
-		
+		# Usar o ID do capítulo como nome do arquivo
+		var file_path = "res://addons/visual_novel_editor/data/chapters/" + chapter.chapter_id + ".tres"
 		chapter.resource_path = file_path
 		print("Resource path definido para: ", file_path)
 
@@ -283,26 +272,23 @@ func _on_chapter_selected(index):
 		return
 		
 	var chapter_name = chapter_list.get_item_text(index)
-	if VisualNovelSingleton.chapters.has(chapter_name):
-		current_chapter = VisualNovelSingleton.chapters[chapter_name]
-		
-		# CORREÇÃO: Garantir resource_path ao selecionar
+	
+	# Encontrar o capítulo pelo nome (poderia ser otimizado com um dicionário adicional)
+	for chapter_id in VisualNovelSingleton.chapters:
+		var chapter = VisualNovelSingleton.chapters[chapter_id]
+		if chapter.chapter_name == chapter_name:
+			current_chapter = chapter
+			break
+	
+	if current_chapter:
+		# Garantir resource_path ao selecionar
 		_ensure_chapter_resource_path(current_chapter)
-		
 		_update_chapter_ui()
 		
 		if graph_edit:
-			# Limpar seleção atual
 			graph_edit._clear_graph()
-			
-			# Aguardar um frame para limpeza completa
 			await get_tree().process_frame
-			
-			# Carregar novo capítulo
 			graph_edit._update_chapter_editor(current_chapter)
-			
-			# Verificação de consistência
-			print("Verificando consistência após carregamento...")
 			_verify_chapter_consistency()
 	else:
 		current_chapter = null
@@ -346,11 +332,11 @@ func _refresh_chapter_list():
 	
 	print("Atualizando lista de capítulos. Total: ", VisualNovelSingleton.chapters.size())
 	
-	# CORRIGIDO: Garantir que estamos iterando corretamente
-	var chapter_names = VisualNovelSingleton.chapters.keys()
-	for chapter_name in chapter_names:
-		chapter_list.add_item(chapter_name)
-		print("Adicionado capítulo à lista: ", chapter_name)
+	# Iterar pelos capítulos e mostrar seus nomes
+	for chapter_id in VisualNovelSingleton.chapters:
+		var chapter = VisualNovelSingleton.chapters[chapter_id]
+		chapter_list.add_item(chapter.chapter_name)
+		print("Adicionado capítulo à lista: ", chapter.chapter_name)
 	
 	print("Lista atualizada. Items na lista: ", chapter_list.item_count)
 
