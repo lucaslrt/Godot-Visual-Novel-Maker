@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ChapterResource" load_steps=2 format=3 uid="uid://mrda0p7oulvu"]
+
+[ext_resource type="Script" uid="uid://boy8tnf7he8ey" path="res://addons/visual_novel_editor/resources/chapter_resource.gd" id="1_7ceuk"]
+
+[resource]
+script = ExtResource("1_7ceuk")
+chapter_name = "Novo Capítulo 3"
+chapter_description = "Descrição do capítulo"
+start_block_id = "start_1748185506_84105"
+blocks = {
+"end_1748185506_84105": {
+"graph_position": {
+"x": 800.0,
+"y": 300.0
+},
+"type": "end"
+},
+"start_1748185506_84105": {
+"graph_position": {
+"x": 100.0,
+"y": 300.0
+},
+"next_block_id": "",
+"type": "start"
+}
+}

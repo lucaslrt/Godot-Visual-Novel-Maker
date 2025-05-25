@@ -1,13 +1,31 @@
 {
 	"Novo Capítulo 1": {
 		"blocks": {
+			"choice_1748192339_66881": {
+				"choices": [
+					{
+						"next_block_id": "dialogue_1748192310_852",
+						"text": "Opção 1"
+					},
+					{
+						"next_block_id": "dialogue_1748200637_76634",
+						"text": "Opção 2"
+					}
+				],
+				"graph_position": {
+					"x": 1100.0,
+					"y": -120.0
+				},
+				"id": "choice_1748192339_66881",
+				"type": "choice"
+			},
 			"dialogue_1748039351_52583": {
 				"character_expression": "default",
 				"character_name": "Personagem",
 				"character_position": "(0.5, 1.0)",
 				"graph_position": {
-					"x": -160.0,
-					"y": -120.0
+					"x": -340.0,
+					"y": -100.0
 				},
 				"id": "dialogue_1748039351_52583",
 				"next_block_id": "dialogue_1748039354_53807",
@@ -17,17 +35,41 @@
 			"dialogue_1748039354_53807": {
 				"character_name": "Personagem",
 				"graph_position": {
-					"x": 760.0,
+					"x": 420.0,
 					"y": -120.0
 				},
 				"id": "dialogue_1748039354_53807",
+				"next_block_id": "choice_1748192339_66881",
+				"text": "Novo diálogo...",
+				"type": "dialogue"
+			},
+			"dialogue_1748192310_852": {
+				"character_expression": "default",
+				"character_name": "Personagem",
+				"character_position": "(0.5, 1.0)",
+				"graph_position": {
+					"x": 2120.0,
+					"y": -420.0
+				},
+				"id": "dialogue_1748192310_852",
+				"next_block_id": "end_1748039349_02139",
+				"text": "Digite o texto aqui...",
+				"type": "dialogue"
+			},
+			"dialogue_1748200637_76634": {
+				"character_name": "Personagem",
+				"graph_position": {
+					"x": 2120.0,
+					"y": 400.0
+				},
+				"id": "dialogue_1748200637_76634",
 				"next_block_id": "end_1748039349_02139",
 				"text": "Novo diálogo...",
 				"type": "dialogue"
 			},
 			"end_1748039349_02139": {
 				"graph_position": {
-					"x": 1600.0,
+					"x": 2940.0,
 					"y": -80.0
 				},
 				"id": "end_1748039349_02139",
@@ -68,5 +110,27 @@
 		"chapter_description": "Descrição do capítulo",
 		"chapter_name": "Novo Capítulo 2",
 		"start_block_id": "start_1748040054_83539"
+	},
+	"Novo Capítulo 3": {
+		"blocks": {
+			"end_1748185506_84105": {
+				"graph_position": {
+					"x": 800.0,
+					"y": 300.0
+				},
+				"type": "end"
+			},
+			"start_1748185506_84105": {
+				"graph_position": {
+					"x": 100.0,
+					"y": 300.0
+				},
+				"next_block_id": "",
+				"type": "start"
+			}
+		},
+		"chapter_description": "Descrição do capítulo",
+		"chapter_name": "Novo Capítulo 3",
+		"start_block_id": "start_1748185506_84105"
 	}
 }

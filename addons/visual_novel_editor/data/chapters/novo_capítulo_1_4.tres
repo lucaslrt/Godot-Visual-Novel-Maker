@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="ChapterResource" load_steps=2 format=3 uid="uid://da06ujrfqj3jq"]
+
+[ext_resource type="Script" uid="uid://boy8tnf7he8ey" path="res://addons/visual_novel_editor/resources/chapter_resource.gd" id="1_ljyal"]
+
+[resource]
+script = ExtResource("1_ljyal")
+chapter_name = "Novo Capítulo 1"
+chapter_description = "Descrição do capítulo"
+start_block_id = "start_1748039349_02139"
+blocks = {
+"choice_1748192339_66881": {
+"choices": [{
+"next_block_id": "dialogue_1748192310_852",
+"text": "Opção 1"
+}, {
+"next_block_id": "",
+"text": "Opção 2"
+}],
+"graph_position": Vector2(1120, -100),
+"id": "choice_1748192339_66881",
+"type": "choice"
+},
+"dialogue_1748039351_52583": {
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": "(0.5, 1.0)",
+"graph_position": {
+"x": -340.0,
+"y": -100.0
+},
+"id": "dialogue_1748039351_52583",
+"next_block_id": "dialogue_1748039354_53807",
+"text": "Digite o texto aqui...",
+"type": "dialogue"
+},
+"dialogue_1748039354_53807": {
+"character_name": "Personagem",
+"graph_position": {
+"x": 420.0,
+"y": -120.0
+},
+"id": "dialogue_1748039354_53807",
+"next_block_id": "choice_1748192339_66881",
+"text": "Novo diálogo...",
+"type": "dialogue"
+},
+"dialogue_1748192310_852": {
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": Vector2(0.5, 1),
+"graph_position": Vector2(2080, -60),
+"id": "dialogue_1748192310_852",
+"next_block_id": "end_1748039349_02139",
+"text": "Digite o texto aqui...",
+"type": "dialogue"
+},
+"end_1748039349_02139": {
+"graph_position": {
+"x": 2940.0,
+"y": -80.0
+},
+"id": "end_1748039349_02139",
+"type": "end"
+},
+"start_1748039349_02139": {
+"graph_position": {
+"x": -1320.0,
+"y": -120.0
+},
+"id": "start_1748039349_02139",
+"next_block_id": "dialogue_1748039351_52583",
+"type": "start"
+}
+}

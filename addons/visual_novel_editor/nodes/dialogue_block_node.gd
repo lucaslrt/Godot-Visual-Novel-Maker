@@ -85,37 +85,37 @@ func _configure_slots():
 		"choice":
 			title = "Escolha"
 			var choices = block_data.get("choices", [])
+			var num_choices = choices.size()
 			
-			# Slot de entrada principal (permite múltiplas conexões)
-			set_slot(0, 
-				true, 0, Color(0.3, 0.3, 1),    # Entrada azul
-				false, 0, Color(0, 0, 0, 0)       # Sem saída no slot 0
+			# Limpar todos os slots existentes
+			clear_all_slots()
+			
+			# CORREÇÃO: Configurar slot 0 apenas como entrada (para receber conexões)
+			set_slot(0,
+				true, 0, Color.CADET_BLUE,     # Entrada azul
+				true, 0, Color(0, 0, 0, 0)    # Sem saída no slot 0
 			)
 			
-			# Cores do gradiente amarelo->escuro
-			var base_yellow = Color(0.95, 0.95, 0.3)  # Amarelo bem claro
-			var dark_yellow = Color(0.5, 0.5, 0.1)    # Amarelo escuro
-			var color_step = 1.0 / max(choices.size(), 1)
+			# Cores do gradiente amarelo->escuro para os slots de saída
+			var base_yellow = Color(0.95, 0.95, 0.3)
+			var dark_yellow = Color(0.5, 0.5, 0.1)
+			var color_step = 1.0 / max(num_choices, 1)
 			
-			# Criar um slot de saída para cada escolha
-			for i in range(choices.size()):
-				var slot_idx = i
-				
+			# Criar espaçadores e slots de saída no meio do bloco
+			for i in range(num_choices):
 				# Interpolação linear entre as cores
 				var slot_color = base_yellow.lerp(dark_yellow, color_step * i)
 				
-				set_slot(slot_idx, 
-					false, 0, Color(0, 0, 0, 0), 
-					true, 0, slot_color
+				# CORREÇÃO: Configurar slots de saída (índices i+1) apenas como saída
+				set_slot(i + 1,
+					false, 0, Color(0, 0, 0, 0),   # Sem entrada nos slots de saída
+					true, 0, slot_color            # Saída colorida
 				)
 				
-				# Adicionar marcador visual para o slot
-				var slot_marker = Control.new()
-				slot_marker.name = "SlotMarker_%d" % slot_idx
-				slot_marker.custom_minimum_size = Vector2(0, 20)
-				add_child(slot_marker)
-				move_child(slot_marker, i)
-
+				var spacer = Control.new()
+				spacer.name = "OutputSpacer_%d" % (i+1)
+				spacer.custom_minimum_size = Vector2(0, 25)  # Espaçamento entre slots
+				add_child(spacer)
 
 func _setup_preview_ui(parent: Control) -> void:
 	match block_data["type"]:
@@ -160,11 +160,6 @@ func _setup_preview_ui(parent: Control) -> void:
 				parent.add_child(pos_label)
 		
 		"choice":
-			# Adicionar um espaçador para o slot de entrada
-			var spacer = Control.new()
-			spacer.custom_minimum_size.y = 20
-			parent.add_child(spacer)
-			
 			var choice_vbox = VBoxContainer.new()
 			parent.add_child(choice_vbox)
 			
@@ -288,11 +283,6 @@ func _setup_edit_ui(parent: Control) -> void:
 			parent.add_child(text_edit)
 		
 		"choice":
-			# Adicionar um espaçador para o slot de entrada
-			var spacer = Control.new()
-			spacer.custom_minimum_size.y = 20
-			parent.add_child(spacer)
-			
 			var choices_scroll = ScrollContainer.new()
 			choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			choices_scroll.custom_minimum_size.y = 150
@@ -348,6 +338,8 @@ func _emit_update():
 	block_updated.emit(block_data)
 
 func clear_all_slots():
-	# Limpa todos os slots para evitar problemas com slots fantasmas
-	for i in range(32):  # Número arbitrário grande o suficiente
-		set_slot(i, false, 0, Color(0, 0, 0, 0), false, 0, Color(0, 0, 0, 0))
+	# Remove todos os espaçadores adicionados
+	for child in get_children():
+		if child.name.begins_with("InputSpacer") or child.name.begins_with("OutputSpacer_"):
+			remove_child(child)
+			child.queue_free()

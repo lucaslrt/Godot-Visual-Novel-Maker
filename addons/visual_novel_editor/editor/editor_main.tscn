@@ -1,18 +1,55 @@
-[gd_scene load_steps=7 format=3 uid="uid://b785ufb0f238e"]
+[gd_scene load_steps=10 format=3 uid="uid://b785ufb0f238e"]
 
 [ext_resource type="Script" uid="uid://do72ryj7i8dhp" path="res://addons/visual_novel_editor/editor/editor_main.gd" id="1_hd7xp"]
 [ext_resource type="Script" uid="uid://utsdswg7dxbq" path="res://addons/visual_novel_editor/editor/graph_edit.gd" id="2_m406w"]
 [ext_resource type="Script" uid="uid://26s6rs84c1u6" path="res://addons/visual_novel_editor/editor/block_editor.gd" id="3_4uf54"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4uf54"]
-bg_color = Color(0.8, 0.2, 0.2, 1)
+bg_color = Color(0.15, 0.15, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.5, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4uoua"]
-bg_color = Color(0.2, 0.8, 0.2, 1)
+bg_color = Color(0.8, 0.8, 0.2, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="Theme" id="Theme_1oe52"]
-GraphNodeEnd/styles/panel = SubResource("StyleBoxFlat_4uf54")
-GraphNodeStart/styles/panel = SubResource("StyleBoxFlat_4uoua")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1oe52"]
+bg_color = Color(0.2, 0.2, 0.8, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pbysd"]
+bg_color = Color(0.8, 0.2, 0.2, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_67hpj"]
+bg_color = Color(0.2, 0.8, 0.2, 0.8)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.5, 0.5, 1)
+
+[sub_resource type="Theme" id="Theme_gs2eu"]
+GraphNode/styles/panel = SubResource("StyleBoxFlat_4uf54")
+GraphNodeChoice/styles/panel = SubResource("StyleBoxFlat_4uoua")
+GraphNodeDialogue/styles/panel = SubResource("StyleBoxFlat_1oe52")
+GraphNodeEnd/styles/panel = SubResource("StyleBoxFlat_pbysd")
+GraphNodeStart/styles/panel = SubResource("StyleBoxFlat_67hpj")
 
 [node name="EditorMain" type="Panel"]
 anchors_preset = 15
@@ -66,9 +103,10 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 2
+item_count = 3
 item_0/text = "Novo Capítulo 1"
 item_1/text = "Novo Capítulo 2"
+item_2/text = "Novo Capítulo 3"
 
 [node name="TabContainer" type="TabContainer" parent="VBoxContainer/HSplitContainer"]
 layout_mode = 2
@@ -94,7 +132,7 @@ size_flags_vertical = 3
 [node name="GraphEdit" type="GraphEdit" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme = SubResource("Theme_1oe52")
+theme = SubResource("Theme_gs2eu")
 script = ExtResource("2_m406w")
 
 [node name="BlockEditor" type="Panel" parent="VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer"]

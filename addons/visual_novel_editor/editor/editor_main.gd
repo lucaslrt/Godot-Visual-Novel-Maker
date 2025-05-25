@@ -6,7 +6,6 @@ extends Panel
 @onready var chapter_name_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterNameEdit
 @onready var chapter_description_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterDescriptionEdit
 @onready var graph_edit: ChapterEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/GraphEdit
-#@onready var graph_edit: CustomGraphEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/CustomGraphEditor
 @onready var block_editor: BlockEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/BlockEditor
 
 # Capítulo atual sendo editado
@@ -57,18 +56,19 @@ func _process(delta):
 
 # Métodos para interação com a UI
 func _on_add_chapter_button_pressed():
-	# REMOVIDO: Verificação desnecessária do editor
-	
 	# Verificar se o VisualNovelSingleton está disponível
 	if not _check_singleton():
 		return
 	
 	var new_chapter = ChapterResource.new()
-	new_chapter.chapter_name = "Novo Capítulo " + str(chapter_list.item_count + 1)
+	var chapter_name = "Novo Capítulo " + str(chapter_list.item_count + 1)
+	new_chapter.chapter_name = chapter_name
 	new_chapter.chapter_description = "Descrição do capítulo"
 	
+	# CORREÇÃO: Definir o resource_path no momento da criação
+	_ensure_chapter_resource_path(new_chapter)
+	
 	# Adicionar bloco inicial
-	# Substituir pontos por underscores na geração de IDs
 	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
 	var start_block_id = "start_%s" % timestamp
 	
@@ -106,6 +106,13 @@ func _on_delete_chapter_button_pressed():
 	if selected_items.size() > 0:
 		var chapter_name = chapter_list.get_item_text(selected_items[0])
 		if VisualNovelSingleton.chapters.has(chapter_name):
+			# CORREÇÃO: Remover o arquivo .tres se existir
+			var chapter_to_delete = VisualNovelSingleton.chapters[chapter_name]
+			if chapter_to_delete.resource_path and not chapter_to_delete.resource_path.is_empty():
+				if FileAccess.file_exists(chapter_to_delete.resource_path):
+					DirAccess.remove_absolute(chapter_to_delete.resource_path)
+					print("Arquivo do capítulo removido: ", chapter_to_delete.resource_path)
+			
 			VisualNovelSingleton.chapters.erase(chapter_name)
 			_refresh_chapter_list()
 			
@@ -128,6 +135,9 @@ func _on_save_button_pressed():
 		push_error("Nenhum capítulo selecionado!")
 		return
 	
+	# CORREÇÃO: Garantir que o resource_path existe antes de tentar salvar
+	_ensure_chapter_resource_path(current_chapter)
+	
 	# Atualizar posições antes de salvar
 	if graph_edit:
 		for child in graph_edit.get_children():
@@ -138,18 +148,56 @@ func _on_save_button_pressed():
 					print("Salvando posição para ", block_id, ": ", child.position_offset)
 	
 	# Salvar metadados
+	var old_chapter_name = current_chapter.chapter_name
 	current_chapter.chapter_name = chapter_name_edit.text
 	current_chapter.chapter_description = chapter_description_edit.text
 	
-	# Salvar o recurso
+	# CORREÇÃO: Se o nome mudou, atualizar no singleton
+	if old_chapter_name != current_chapter.chapter_name:
+		if VisualNovelSingleton.chapters.has(old_chapter_name):
+			VisualNovelSingleton.chapters.erase(old_chapter_name)
+		VisualNovelSingleton.chapters[current_chapter.chapter_name] = current_chapter
+		_refresh_chapter_list()
+	
+	# Salvar o recurso como arquivo .tres
 	var save_result = ResourceSaver.save(current_chapter, current_chapter.resource_path)
 	if save_result != OK:
 		push_error("Falha ao salvar capítulo: ", save_result)
 	else:
 		print("Capítulo salvo com sucesso em: ", current_chapter.resource_path)
+		
+		# CORREÇÃO: Também salvar no sistema JSON do singleton
+		VisualNovelSingleton.save_chapters()
 	
 	# Debug detalhado
 	_print_chapter_debug_info()
+
+# NOVA FUNÇÃO: Garantir que o capítulo tem um resource_path válido
+func _ensure_chapter_resource_path(chapter: ChapterResource):
+	if not chapter:
+		return
+		
+	if chapter.resource_path.is_empty():
+		# Criar pasta se não existir
+		var dir = DirAccess.open("res://")
+		if not dir.dir_exists("res://addons/visual_novel_editor/data/chapters"):
+			dir.make_dir_recursive("res://addons/visual_novel_editor/data/chapters")
+		
+		# Gerar nome de arquivo baseado no nome do capítulo
+		var safe_name = chapter.chapter_name.to_snake_case().replace(" ", "_")
+		if safe_name.is_empty():
+			safe_name = "chapter_" + str(Time.get_unix_time_from_system())
+		
+		var file_path = "res://addons/visual_novel_editor/data/chapters/" + safe_name + ".tres"
+		
+		# Se o arquivo já existe, adicionar um número
+		var counter = 1
+		while FileAccess.file_exists(file_path):
+			file_path = "res://addons/visual_novel_editor/data/chapters/" + safe_name + "_" + str(counter) + ".tres"
+			counter += 1
+		
+		chapter.resource_path = file_path
+		print("Resource path definido para: ", file_path)
 
 func _print_chapter_debug_info():
 	print("=== DEBUG DO CAPÍTULO ===")
@@ -195,9 +243,37 @@ func _on_load_button_pressed():
 	if not _check_singleton():
 		return
 		
+	# CORREÇÃO: Carregar tanto do JSON quanto dos arquivos .tres
 	VisualNovelSingleton.load_chapters()
+	_load_individual_chapter_files()
 	_refresh_chapter_list()
 	print("Capítulos carregados!")
+
+# NOVA FUNÇÃO: Carregar arquivos .tres individuais
+func _load_individual_chapter_files():
+	var chapters_dir = "res://addons/visual_novel_editor/data/chapters/"
+	var dir = DirAccess.open(chapters_dir)
+	
+	if not dir:
+		print("Pasta de capítulos não encontrada: ", chapters_dir)
+		
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != "":
+		if file_name.ends_with(".tres"):
+			var file_path = chapters_dir + file_name
+			var chapter = load(file_path) as ChapterResource
+			
+			if chapter:
+				print("Carregando capítulo .tres: ", chapter.chapter_name)
+				VisualNovelSingleton.chapters[chapter.chapter_name] = chapter
+			else:
+				print("Erro ao carregar: ", file_path)
+		
+		file_name = dir.get_next()
 
 func _on_chapter_selected(index):
 	if not _check_singleton():
@@ -209,6 +285,10 @@ func _on_chapter_selected(index):
 	var chapter_name = chapter_list.get_item_text(index)
 	if VisualNovelSingleton.chapters.has(chapter_name):
 		current_chapter = VisualNovelSingleton.chapters[chapter_name]
+		
+		# CORREÇÃO: Garantir resource_path ao selecionar
+		_ensure_chapter_resource_path(current_chapter)
+		
 		_update_chapter_ui()
 		
 		if graph_edit:

@@ -145,71 +145,70 @@ func _on_connection_request(from_node, from_port, to_node, to_port):
 	var to_node_str = str(to_node)
 	
 	print("Tentando conectar: ", from_node_str, ":", from_port, " -> ", to_node_str, ":", to_port)
-	print("Blocos disponíveis no ChapterResource: ", current_chapter.blocks.keys())
-	print("Nós no GraphEdit: ", get_children().filter(func(c): return c is GraphNode).map(func(n): return n.name))
+	print("Blocos disponíveis: ", current_chapter.blocks.keys())
 	
-	# Verificação detalhada da existência dos blocos
+	# Verificar existência dos nós
 	if not current_chapter.blocks.has(from_node_str):
-		push_error("Bloco origem não encontrado no ChapterResource: ", from_node_str)
-		print("Possíveis causas:")
-		print("- O bloco não foi adicionado corretamente ao ChapterResource")
-		print("- O nome do nó no GraphEdit não corresponde ao ID no ChapterResource")
-		print("- O ChapterResource não foi atualizado após adicionar o bloco")
-		return
-	
-	 # Verificar existência nos dados do capítulo
-	if not current_chapter.blocks.has(from_node_str):
-		push_error("Bloco origem não encontrado no ChapterResource: ", from_node_str)
+		push_error("Bloco origem não encontrado: ", from_node_str)
 		return
 	
 	if not current_chapter.blocks.has(to_node_str):
-		push_error("Bloco destino não encontrado no ChapterResource: ", to_node_str)
+		push_error("Bloco destino não encontrado: ", to_node_str)
 		return
 	
-	# Verificar existência no GraphEdit (convertendo para NodePath)
+	# Verificar se os nós existem no GraphEdit
 	if not has_node(NodePath(from_node_str)):
-		push_error("Bloco origem não encontrado no GraphEdit: ", from_node_str)
+		push_error("Nó origem não encontrado no GraphEdit: ", from_node_str)
 		return
 	
 	if not has_node(NodePath(to_node_str)):
-		push_error("Bloco destino não encontrado no GraphEdit: ", to_node_str)
+		push_error("Nó destino não encontrado no GraphEdit: ", to_node_str)
 		return
 	
-	# Restante da função usando as strings originais para conexão
-	if connect_node(from_node, from_port, to_node, to_port) != OK:
-		push_error("Falha na conexão visual")
-		return
-	
-	# Atualizar dados (usando strings)
+	# Obter os blocos envolvidos
 	var from_block = current_chapter.blocks[from_node_str]
 	var to_block = current_chapter.blocks[to_node_str]
 	
 	# Validações de tipo
 	if to_block["type"] == "start":
-		disconnect_node(from_node, from_port, to_node, to_port)
-		push_error("Conexão inválida para bloco start")
+		push_error("Não é possível conectar ao bloco inicial!")
 		return
 	
 	if from_block["type"] == "end":
-		disconnect_node(from_node, from_port, to_node, to_port)
-		push_error("Conexão inválida a partir de bloco end")
+		push_error("Não é possível conectar a partir do bloco final!")
 		return
 	
-	# Atualizar conexão nos dados
+	# Conectar visualmente primeiro
+	if connect_node(from_node, from_port, to_node, to_port) != OK:
+		push_error("Falha ao conectar visualmente")
+		return
+	
+	# Atualizar os dados do capítulo
 	match from_block["type"]:
 		"start", "dialogue":
-			from_block["next_block_id"] = to_node
-			print("Conexão atualizada: ", from_node, " -> ", to_node)
+			from_block["next_block_id"] = to_node_str
+			print("Conexão simples atualizada: ", from_node_str, " -> ", to_node_str)
 		
 		"choice":
-			if from_port > 0 and from_block.has("choices"):
-				var choice_index = from_port - 1
-				if choice_index < from_block.choices.size():
-					from_block.choices[choice_index]["next_block_id"] = to_node
-					print("Conexão de choice atualizada: ", from_node, "[", choice_index, "] -> ", to_node)
+			# IMPORTANTE: No bloco choice, from_port 0 é a entrada, ports 1+ são as escolhas
+			if from_port > 0:  # Se for uma escolha (porta >= 1)
+				var choice_index = from_port - 1  # Converter porta para índice da escolha
+				if choice_index < from_block.get("choices", []).size():
+					from_block["choices"][choice_index]["next_block_id"] = to_node_str
+					print("Conexão de escolha atualizada: ", from_node_str, 
+						  "[", choice_index, "] -> ", to_node_str)
+				else:
+					push_error("Índice de escolha inválido: ", choice_index)
+					disconnect_node(from_node, from_port, to_node, to_port)
+					return
+			else:
+				push_error("Tentativa de conectar a partir da porta de entrada do bloco choice")
+				disconnect_node(from_node, from_port, to_node, to_port)
+				return
 	
 	# Forçar atualização
 	current_chapter.notify_property_list_changed()
+	print("Conexão estabelecida com sucesso!")
 
 func _force_chapter_update():
 	if current_chapter:
@@ -320,27 +319,39 @@ func _update_connections() -> void:
 		
 	clear_connections()
 	
+	print("=== RESTAURANDO CONEXÕES ===")
+	
 	for block_id in current_chapter.blocks:
 		var block = current_chapter.blocks[block_id]
-		var block_path = NodePath(str(block_id))  # Converter para NodePath
+		var block_path = NodePath(str(block_id))
 		
 		if not has_node(block_path):
+			print("Nó não encontrado: ", block_id)
 			continue
+			
+		print("Verificando conexões para: ", block_id, " (", block["type"], ")")
 			
 		match block["type"]:
 			"start", "dialogue":
 				if block.has("next_block_id") and not block.next_block_id.is_empty():
-					var next_path = NodePath(str(block.next_block_id))
-					if has_node(next_path):
+					print(" - Conexão principal para: ", block.next_block_id)
+					if has_node(NodePath(block.next_block_id)):
 						connect_node(block_id, 0, block.next_block_id, 0)
+					else:
+						print("   - Nó destino não encontrado!")
+			
 			"choice":
 				if block.has("choices"):
 					for i in range(block.choices.size()):
 						var choice = block.choices[i]
 						if choice.has("next_block_id") and not choice.next_block_id.is_empty():
-							var next_path = NodePath(str(choice.next_block_id))
-							if has_node(next_path):
-								connect_node(block_id, i + 1, choice.next_block_id, 0)
+							print(" - Conexão de escolha ", i, " para: ", choice.next_block_id)
+							if has_node(NodePath(choice.next_block_id)):
+								connect_node(block_id, i + 1, choice.next_block_id, 0)  # i+1 porque a porta 0 é a entrada
+							else:
+								print("   - Nó destino não encontrado!")
+	
+	print("=== CONEXÕES RESTAURADAS ===")
 
 func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
 	var block_scene = preload("uid://rj8arjvt7auh")
