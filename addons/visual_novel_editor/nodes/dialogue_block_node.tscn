@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://rj8arjvt7auh"]
+[gd_scene load_steps=2 format=3 uid="uid://c868usrpognsd"]
 
 [ext_resource type="Script" uid="uid://bcnro75nol1mw" path="res://addons/visual_novel_editor/nodes/dialogue_block_node.gd" id="1_qf18r"]
 
