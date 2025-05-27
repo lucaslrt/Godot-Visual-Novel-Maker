@@ -10,20 +10,25 @@ description: Descrição do capítulo
 -> Opção 2 |> dialogue_1748271187_17535
 
 :: dialogue_1748271174_96391
-Digite o texto aqui...
+Texto 1
 -> Continuar |> choice_1748271181_35865
 
 :: dialogue_1748271187_17535
-Digite o texto aqui...
--> Continuar |> end_1748271171_87531
+Texto 3
+-> Continuar |> dialogue_1748369128_6531
 
 :: dialogue_1748271187_65817
-Digite o texto aqui...
--> Continuar |> end_1748271171_87531
+Texto 2
+-> Continuar |> dialogue_1748369128_6531
 
 :: end_1748271171_87531
 (Fim do capítulo)
 
 :: start_1748271171_87531
 -> Iniciar |> dialogue_1748271174_96391
+
+:: dialogue_1748369128_6531
+Texto 4
+
+-> Continuar |> end_1748271171_87531
 

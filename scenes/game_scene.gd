@@ -13,10 +13,10 @@ extends Control
 
 # Menu de sistema
 @onready var system_menu = $SystemMenu
-@onready var save_button = $SystemMenu/MenuPanel/SaveButton
-@onready var load_button = $SystemMenu/MenuPanel/LoadButton
-@onready var settings_button = $SystemMenu/MenuPanel/SettingsButton
-@onready var menu_button = $SystemMenu/MenuPanel/MenuButton
+@onready var save_button = $SystemMenu/MenuPanel/VBoxContainer/SaveButton
+@onready var load_button = $SystemMenu/MenuPanel/VBoxContainer/LoadButton
+@onready var settings_button = $SystemMenu/MenuPanel/VBoxContainer/SettingsButton
+@onready var menu_button = $SystemMenu/MenuPanel/VBoxContainer/MenuButton
 
 # Sistema de jogo
 @onready var visual_novel_manager = $VisualNovelManager
@@ -62,6 +62,8 @@ func _start_first_chapter():
 	if not VisualNovelSingleton:
 		push_error("VisualNovelSingleton não encontrado!")
 		return
+		
+	VisualNovelSingleton.load_all_data()
 	
 	# Se não há capítulos, criar um de exemplo
 	if VisualNovelSingleton.chapters.is_empty():

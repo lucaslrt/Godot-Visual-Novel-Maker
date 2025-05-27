@@ -17,7 +17,7 @@ blocks = {
 "next_block_id": "dialogue_1748271187_17535",
 "text": "Opção 2"
 }],
-"graph_position": Vector2(1480, 260),
+"graph_position": Vector2(1426.95, 346.204),
 "id": "choice_1748271181_35865",
 "type": "choice"
 },
@@ -25,10 +25,10 @@ blocks = {
 "character_expression": "default",
 "character_name": "Personagem",
 "character_position": Vector2(0.5, 1),
-"graph_position": Vector2(780, 300),
+"graph_position": Vector2(756.791, 366.311),
 "id": "dialogue_1748271174_96391",
 "next_block_id": "choice_1748271181_35865",
-"text": "Digite o texto aqui...",
+"text": "Texto 1",
 "type": "dialogue"
 },
 "dialogue_1748271187_17535": {
@@ -37,8 +37,8 @@ blocks = {
 "character_position": Vector2(0.5, 1),
 "graph_position": Vector2(2340, 820),
 "id": "dialogue_1748271187_17535",
-"next_block_id": "end_1748271171_87531",
-"text": "Digite o texto aqui...",
+"next_block_id": "dialogue_1748369128_6531",
+"text": "Texto 3",
 "type": "dialogue"
 },
 "dialogue_1748271187_65817": {
@@ -47,12 +47,23 @@ blocks = {
 "character_position": Vector2(0.5, 1),
 "graph_position": Vector2(2300, -40),
 "id": "dialogue_1748271187_65817",
+"next_block_id": "dialogue_1748369128_6531",
+"text": "Texto 2",
+"type": "dialogue"
+},
+"dialogue_1748369128_6531": {
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": Vector2(0.5, 1),
+"graph_position": Vector2(3640, 280),
+"id": "dialogue_1748369128_6531",
 "next_block_id": "end_1748271171_87531",
-"text": "Digite o texto aqui...",
+"text": "Texto 4
+",
 "type": "dialogue"
 },
 "end_1748271171_87531": {
-"graph_position": Vector2(3160, 300),
+"graph_position": Vector2(4642.76, 291.174),
 "id": "end_1748271171_87531",
 "type": "end"
 },

@@ -38,11 +38,12 @@ grow_vertical = 2
 
 [node name="DialogueContainer" type="Control" parent="."]
 layout_mode = 1
-anchors_preset = 2
+anchors_preset = 12
 anchor_top = 1.0
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -250.0
-offset_right = 1152.0
+offset_top = -300.0
+grow_horizontal = 2
 grow_vertical = 0
 
 [node name="DialoguePanel" type="Panel" parent="DialogueContainer"]
@@ -50,9 +51,9 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 50.0
+offset_left = 20.0
 offset_top = 20.0
-offset_right = -50.0
+offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
@@ -66,7 +67,7 @@ anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = 20.0
 offset_right = -20.0
-offset_bottom = -60.0
+offset_bottom = -80.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -76,12 +77,13 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = -80.0
-offset_right = 200.0
-offset_bottom = -60.0
+offset_top = -70.0
+offset_right = 250.0
+offset_bottom = -45.0
 grow_vertical = 0
 theme_override_font_sizes/font_size = 18
 text = "Personagem"
+autowrap_mode = 3
 
 [node name="DialogueText" type="RichTextLabel" parent="DialogueContainer/DialoguePanel"]
 layout_mode = 1
@@ -97,6 +99,7 @@ grow_vertical = 2
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
 text = "Texto do diálogo aparece aqui..."
+fit_content = true
 
 [node name="ContinueButton" type="Button" parent="DialogueContainer/DialoguePanel"]
 layout_mode = 1
@@ -105,8 +108,8 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -120.0
-offset_top = -50.0
+offset_left = -140.0
+offset_top = -60.0
 offset_right = -20.0
 offset_bottom = -20.0
 grow_horizontal = 0
@@ -121,10 +124,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -250.0
-offset_top = -388.0
-offset_right = 250.0
-offset_bottom = -88.0
+offset_left = -300.0
+offset_top = -450.0
+offset_right = 300.0
+offset_bottom = -100.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_1xk4s")
@@ -134,10 +137,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -166,10 +169,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -200.0
-offset_right = 150.0
-offset_bottom = 200.0
+offset_left = -200.0
+offset_top = -250.0
+offset_right = 200.0
+offset_bottom = 250.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_1xk4s")
@@ -179,81 +182,53 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Title" type="Label" parent="SystemMenu/MenuPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Menu do Sistema"
 horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="HSeparator" type="HSeparator" parent="SystemMenu/MenuPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="SaveButton" type="Button" parent="SystemMenu/MenuPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -60.0
-offset_right = 100.0
-offset_bottom = -20.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="SaveButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 text = "Salvar Jogo"
 
-[node name="LoadButton" type="Button" parent="SystemMenu/MenuPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -10.0
-offset_right = 100.0
-offset_bottom = 30.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="LoadButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 text = "Carregar Jogo"
 
-[node name="SettingsButton" type="Button" parent="SystemMenu/MenuPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = 40.0
-offset_right = 100.0
-offset_bottom = 80.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="SettingsButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 text = "Configurações"
 
-[node name="MenuButton" type="Button" parent="SystemMenu/MenuPanel"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = 90.0
-offset_right = 100.0
-offset_bottom = 130.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="MenuButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 text = "Menu Principal"
+
+[node name="CloseButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Fechar Menu"
 
 [node name="VisualNovelManager" type="Node" parent="."]
 script = ExtResource("2_onqr8")
