@@ -54,15 +54,11 @@ func _process_current_block():
 		
 	match block.type:
 		"dialogue":
-			# Atualizar a UI com o diálogo
-			if dialogue_display:
-				dialogue_display.show_dialogue(block)
+			# A UI será atualizada via sinal dialogue_advanced
+			pass
 		"choice":
-			# Apresentar escolhas ao jogador
 			emit_signal("choice_presented", block.choices)
-			# A seleção da escolha será tratada em select_choice()
 		_:
-			# Tipo desconhecido, avance
 			advance_dialogue()
 
 # Método para selecionar uma escolha
@@ -77,8 +73,9 @@ func select_choice(choice_index):
 		
 	emit_signal("choice_selected", choice_index)
 	
-	# Defina o próximo bloco com base na escolha
+	# Atualiza o bloco atual e emite o sinal de avanço
 	current_block_id = block.choices[choice_index].next_block_id
+	emit_signal("dialogue_advanced", current_block_id)  # Adicionado este sinal
 	_process_current_block()
 
 # Método para encerrar o diálogo atual
