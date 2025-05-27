@@ -58,7 +58,7 @@ func load_all_data():
 	print("Dados carregados. Capítulos: ", chapters.size(), " Personagens: ", characters.size())
 
 func save_chapters():
-	print("Salvando capítulos...")
+	print("Salvando capítulos no formato VNScript...")
 	
 	# Cria a pasta se ela não existir
 	var dir = DirAccess.open("res://")
@@ -66,43 +66,79 @@ func save_chapters():
 		push_error("Não foi possível acessar o diretório res://")
 		return
 		
-	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
-		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data")
+	if not dir.dir_exists("res://addons/visual_novel_editor/data/scripts"):
+		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data/scripts")
 		if error != OK:
 			push_error("Erro ao criar diretório: " + str(error))
 			return
 	
-	# Preparar os dados para salvar
-	var save_data = {}
+	# Salvar cada capítulo em um arquivo .vnscript separado
 	for chapter_id in chapters:
 		var chapter = chapters[chapter_id]
-		
 		if not chapter:
 			continue
 		
-		# Converter o resource para um formato serializável
-		var chapter_data = {
-			"chapter_id": chapter.chapter_id,  # Incluir o ID na serialização
-			"chapter_name": chapter.chapter_name,
-			"chapter_description": chapter.chapter_description,
-			"start_block_id": chapter.start_block_id,
-			"blocks": _serialize_blocks(chapter.blocks)
-		}
+		var script_content = _convert_chapter_to_script(chapter)
+		var file_path = "res://addons/visual_novel_editor/data/scripts/%s.vnscript" % chapter_id
 		
-		save_data[chapter_id] = chapter_data  # Usar ID como chave
+		var file = FileAccess.open(file_path, FileAccess.WRITE)
+		if not file:
+			push_error("Erro ao abrir arquivo para escrita: " + file_path)
+			continue
+		
+		file.store_string(script_content)
+		file.close()
+		print("Capítulo salvo: ", file_path)
 	
-	# Salvar os dados em um arquivo JSON
-	var json_string = JSON.stringify(save_data, "\t")
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/chapters.json", FileAccess.WRITE)
+	print("Todos os capítulos foram salvos no formato VNScript!")
+
+func _convert_chapter_to_script(chapter: ChapterResource) -> String:
+	var script = "---\n"
+	script += "title: %s\n" % chapter.chapter_name
+	script += "id: %s\n" % chapter.chapter_id
+	script += "start: %s\n" % chapter.start_block_id
 	
-	if not file:
-		push_error("Erro ao abrir arquivo para escrita: chapters.json")
-		return
+	# Adicionar descrição se existir
+	if not chapter.chapter_description.is_empty():
+		script += "description: %s\n" % chapter.chapter_description
 	
-	file.store_string(json_string)
-	file.close()
+	script += "---\n\n"
 	
-	print("Capítulos salvos com sucesso! Total: ", save_data.size())
+	# Processar cada bloco
+	for block_id in chapter.blocks:
+		var block = chapter.blocks[block_id]
+		
+		# Cabeçalho do bloco
+		script += ":: %s\n" % block_id
+		
+		# Processar conteúdo baseado no tipo
+		match block.get("type", "text"):
+			"text", "dialogue":
+				if block.has("text"):
+					script += block.text + "\n"
+				
+				if block.has("next_block_id") and not block.next_block_id.is_empty():
+					script += "-> Continuar |> %s\n" % block.next_block_id
+			
+			"choice":
+				if block.has("choices"):
+					for choice in block.choices:
+						var next = choice.get("next_block_id", "")
+						script += "-> %s" % choice.text
+						if not next.is_empty():
+							script += " |> %s" % next
+						script += "\n"
+			
+			"start":
+				if block.has("next_block_id") and not block.next_block_id.is_empty():
+					script += "-> Iniciar |> %s\n" % block.next_block_id
+			
+			"end":
+				script += "(Fim do capítulo)\n"
+		
+		script += "\n"  # Espaço entre blocos
+	
+	return script
 
 func _serialize_blocks(blocks):
 	var serialized = {}
@@ -117,58 +153,34 @@ func _serialize_blocks(blocks):
 func load_chapters():
 	print("Carregando capítulos...")
 	
-	# Verificar se o arquivo existe
-	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/chapters.json"):
-		print("Arquivo de capítulos não encontrado. Iniciando com lista vazia.")
-		chapters = {}
-		return
-	
-	# Carregar o arquivo JSON
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/chapters.json", FileAccess.READ)
-	if not file:
-		push_error("Erro ao abrir arquivo de capítulos para leitura")
-		chapters = {}
-		return
-		
-	var json_string = file.get_as_text()
-	file.close()
-	
-	if json_string.is_empty():
-		print("Arquivo de capítulos está vazio")
-		chapters = {}
-		return
-	
-	var json = JSON.new()
-	var error = json.parse(json_string)
-	if error != OK:
-		push_error("Erro ao analisar JSON: " + json.get_error_message() + " na linha " + str(json.get_error_line()))
-		chapters = {}
-		return
-	
-	var chapters_data = json.get_data()
-	if not chapters_data is Dictionary:
-		push_error("Dados de capítulos inválidos")
-		chapters = {}
-		return
-	
 	# Limpar os capítulos existentes
 	chapters.clear()
 	
-	# Criar objetos ChapterResource para cada capítulo carregado
-	for chapter_id in chapters_data:
-		var chapter_data = chapters_data[chapter_id]
+	# Carregar dos arquivos .tres
+	var chapters_dir = "res://addons/visual_novel_editor/data/chapters/"
+	var dir = DirAccess.open(chapters_dir)
+	
+	if not dir:
+		print("Pasta de capítulos não encontrada: ", chapters_dir)
+		return
+	
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != "":
+		if file_name.ends_with(".tres"):
+			var file_path = chapters_dir + file_name
+			var chapter = load(file_path) as ChapterResource
+			
+			if chapter:
+				print("Carregando capítulo .tres: ", chapter.chapter_name)
+				chapters[chapter.chapter_id] = chapter  # Usar ID como chave
+			else:
+				print("Erro ao carregar: ", file_path)
 		
-		var chapter = ChapterResource.new()
-		chapter.chapter_id = chapter_id  # Definir o ID
-		chapter.chapter_name = chapter_data.get("chapter_name", "")
-		chapter.chapter_description = chapter_data.get("chapter_description", "")
-		chapter.start_block_id = chapter_data.get("start_block_id", "")
-		chapter.blocks = chapter_data.get("blocks", {})
-		
-		chapters[chapter.chapter_id] = chapter  # Usar ID como chave
-		
+		file_name = dir.get_next()
+	
 	print("Capítulos carregados com sucesso! Total: ", chapters.size())
-	#print("Chaves carregadas: ", chapters.keys())
 
 func save_characters():
 	# Criar a pasta se ela não existir
@@ -310,6 +322,44 @@ func load_game_state():
 		game_state = data
 	else:
 		game_state = {}
+
+func import_script(file_path: String):
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		push_error("Falha ao abrir arquivo: " + file_path)
+		return
+	
+	var content = file.get_as_text()
+	var parsed = ScriptParser.parse_script(content)
+	
+	var chapter = ChapterResource.new()
+	chapter.chapter_id = parsed.id
+	chapter.chapter_name = parsed.title
+	chapter.start_block_id = parsed.start_block
+	
+	for block_id in parsed.blocks:
+		var block_data = parsed.blocks[block_id]
+		var block = {
+			"type": "text",
+			"text": block_data.text
+		}
+		
+		if block_data.choices.size() > 0:
+			block["type"] = "choice"
+			block["choices"] = []
+			for choice in block_data.choices:
+				block["choices"].append({
+					"text": choice.text,
+					"next_block_id": choice.next
+				})
+		else:
+			block["next_block_id"] = block_data.next
+		
+		chapter.blocks[block_id] = block
+	
+	chapters[chapter.chapter_id] = chapter
+	save_chapters()
+	print("Roteiro importado com sucesso!")
 
 # ADICIONADO: Função para criar capítulos de teste (útil para debug)
 func create_test_chapters():

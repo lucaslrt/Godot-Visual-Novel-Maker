@@ -105,19 +105,29 @@ func _on_delete_chapter_button_pressed():
 	var selected_items = chapter_list.get_selected_items()
 	if selected_items.size() > 0:
 		var chapter_name = chapter_list.get_item_text(selected_items[0])
-		if VisualNovelSingleton.chapters.has(chapter_name):
-			# CORREÇÃO: Remover o arquivo .tres se existir
-			var chapter_to_delete = VisualNovelSingleton.chapters[chapter_name]
+		
+		# Encontrar o capítulo pelo nome
+		var chapter_to_delete = null
+		var chapter_id_to_delete = null
+		for chapter_id in VisualNovelSingleton.chapters:
+			var chapter = VisualNovelSingleton.chapters[chapter_id]
+			if chapter.chapter_name == chapter_name:
+				chapter_to_delete = chapter
+				chapter_id_to_delete = chapter_id
+				break
+		
+		if chapter_to_delete:
+			# Remover arquivo .tres
 			if chapter_to_delete.resource_path and not chapter_to_delete.resource_path.is_empty():
 				if FileAccess.file_exists(chapter_to_delete.resource_path):
 					DirAccess.remove_absolute(chapter_to_delete.resource_path)
-					print("Arquivo do capítulo removido: ", chapter_to_delete.resource_path)
 			
-			VisualNovelSingleton.chapters.erase(chapter_name)
+			# Remover do singleton
+			VisualNovelSingleton.chapters.erase(chapter_id_to_delete)
 			_refresh_chapter_list()
 			
-			# Limpar o editor se o capítulo atual foi excluído
-			if current_chapter and current_chapter.chapter_name == chapter_name:
+			# Limpar editor se necessário
+			if current_chapter and current_chapter.chapter_id == chapter_id_to_delete:
 				current_chapter = null
 				_clear_chapter_editor()
 
@@ -232,9 +242,7 @@ func _on_load_button_pressed():
 	if not _check_singleton():
 		return
 		
-	# CORREÇÃO: Carregar tanto do JSON quanto dos arquivos .tres
 	VisualNovelSingleton.load_chapters()
-	_load_individual_chapter_files()
 	_refresh_chapter_list()
 	print("Capítulos carregados!")
 
@@ -273,23 +281,20 @@ func _on_chapter_selected(index):
 		
 	var chapter_name = chapter_list.get_item_text(index)
 	
-	# Encontrar o capítulo pelo nome (poderia ser otimizado com um dicionário adicional)
-	for chapter_id in VisualNovelSingleton.chapters:
+	# Encontrar o capítulo pelo nome na lista
+	var chapter_ids = VisualNovelSingleton.chapters.keys()
+	for chapter_id in chapter_ids:
 		var chapter = VisualNovelSingleton.chapters[chapter_id]
 		if chapter.chapter_name == chapter_name:
 			current_chapter = chapter
 			break
 	
 	if current_chapter:
-		# Garantir resource_path ao selecionar
-		_ensure_chapter_resource_path(current_chapter)
 		_update_chapter_ui()
-		
 		if graph_edit:
 			graph_edit._clear_graph()
 			await get_tree().process_frame
 			graph_edit._update_chapter_editor(current_chapter)
-			_verify_chapter_consistency()
 	else:
 		current_chapter = null
 		_clear_chapter_editor()
