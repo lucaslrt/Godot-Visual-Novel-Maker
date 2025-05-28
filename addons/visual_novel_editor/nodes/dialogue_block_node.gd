@@ -6,10 +6,22 @@ signal block_updated(block_data)
 
 var block_data = {}
 var editing := false
+var characters_cache = {}  # Cache de personagens e expressões
 
 func _ready():
 	# Conectar sinal de arraste
 	connect("dragged", _on_dragged)
+	# Carregar personagens
+	_load_characters()
+
+func _load_characters():
+	if not VisualNovelSingleton:
+		return
+	
+	characters_cache.clear()
+	for character_id in VisualNovelSingleton.characters:
+		var character = VisualNovelSingleton.characters[character_id]
+		characters_cache[character.display_name] = character.expressions.keys()
 
 func _on_dragged(from: Vector2, to: Vector2):
 	# Atualizar posição nos dados
@@ -31,6 +43,9 @@ func _update_ui() -> void:
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
+	
+	# Carregar personagens atualizados
+	_load_characters()
 	
 	# Container principal com scroll para conteúdo longo
 	var scroll_container = ScrollContainer.new()
@@ -197,7 +212,7 @@ func _setup_preview_ui(parent: Control) -> void:
 func _setup_edit_ui(parent: Control) -> void:
 	match block_data["type"]:
 		"dialogue":
-			# Personagem
+			# Personagem (Dropdown)
 			var char_hbox = HBoxContainer.new()
 			parent.add_child(char_hbox)
 			
@@ -205,16 +220,24 @@ func _setup_edit_ui(parent: Control) -> void:
 			char_label.text = "Personagem:"
 			char_hbox.add_child(char_label)
 			
-			var char_edit = LineEdit.new()
-			char_edit.text = block_data.get("character_name", "")
-			char_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			char_edit.text_changed.connect(func(text):
-				block_data["character_name"] = text
-				_emit_update()
-			)
-			char_hbox.add_child(char_edit)
+			var char_dropdown = OptionButton.new()
+			char_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			char_hbox.add_child(char_dropdown)
 			
-			# Expressão
+			# Preencher dropdown de personagens
+			var current_char = block_data.get("character_name", "")
+			var char_index = 0
+			var char_names = characters_cache.keys()
+			
+			for i in range(char_names.size()):
+				char_dropdown.add_item(char_names[i])
+				if char_names[i] == current_char:
+					char_index = i
+			
+			char_dropdown.selected = char_index
+			char_dropdown.item_selected.connect(_on_character_selected)
+			
+			# Expressão (Dropdown)
 			var expr_hbox = HBoxContainer.new()
 			parent.add_child(expr_hbox)
 			
@@ -222,14 +245,12 @@ func _setup_edit_ui(parent: Control) -> void:
 			expr_label.text = "Expressão:"
 			expr_hbox.add_child(expr_label)
 			
-			var expr_edit = LineEdit.new()
-			expr_edit.text = block_data.get("character_expression", "default")
-			expr_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			expr_edit.text_changed.connect(func(text):
-				block_data["character_expression"] = text
-				_emit_update()
-			)
-			expr_hbox.add_child(expr_edit)
+			var expr_dropdown = OptionButton.new()
+			expr_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			expr_hbox.add_child(expr_dropdown)
+			
+			# Atualizar dropdown de expressões
+			_update_expression_dropdown(expr_dropdown, current_char)
 			
 			# Posição
 			var pos_hbox = HBoxContainer.new()
@@ -275,7 +296,7 @@ func _setup_edit_ui(parent: Control) -> void:
 			var text_edit = TextEdit.new()
 			text_edit.text = block_data.get("text", "")
 			text_edit.size_flags_vertical = Control.SIZE_EXPAND_FILL
-			text_edit.custom_minimum_size.y = 100  # Altura mínima maior
+			text_edit.custom_minimum_size.y = 100
 			text_edit.text_changed.connect(func():
 				block_data["text"] = text_edit.text
 				_emit_update()
@@ -329,6 +350,38 @@ func _setup_edit_ui(parent: Control) -> void:
 				_emit_update()
 			)
 			parent.add_child(add_btn)
+
+func _on_character_selected(index: int):
+	var char_name = characters_cache.keys()[index]
+	block_data["character_name"] = char_name
+	
+	# Atualizar expressão para a padrão do personagem
+	if characters_cache[char_name].size() > 0:
+		block_data["character_expression"] = characters_cache[char_name][0]
+	
+	_emit_update()
+	_update_ui()  # Atualiza a UI para mostrar as novas expressões
+
+func _update_expression_dropdown(dropdown: OptionButton, char_name: String):
+	dropdown.clear()
+	
+	if char_name.is_empty() or not characters_cache.has(char_name):
+		return
+	
+	var expressions = characters_cache[char_name]
+	var current_expr = block_data.get("character_expression", "")
+	var expr_index = 0
+	
+	for i in range(expressions.size()):
+		dropdown.add_item(expressions[i])
+		if expressions[i] == current_expr:
+			expr_index = i
+	
+	dropdown.selected = expr_index
+	dropdown.item_selected.connect(func(index):
+		block_data["character_expression"] = dropdown.get_item_text(index)
+		_emit_update()
+	)
 
 func _toggle_edit_mode():
 	editing = not editing

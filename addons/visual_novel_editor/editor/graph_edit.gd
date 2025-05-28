@@ -1,6 +1,6 @@
 @tool
 extends GraphEdit
-class_name ChapterEditor
+class_name ChapterGraphEdit
 
 signal change_chapter_ui(chapter_name:String, chapter_description: String)
 
@@ -11,6 +11,10 @@ var _is_ready: bool = false
 func _ready() -> void:
 	_is_ready = true
 	node_selected.connect(_on_graph_node_selected)
+	
+	# Conectar ao sinal de atualização de personagens
+	if VisualNovelSingleton:
+		VisualNovelSingleton.characters_updated.connect(_on_characters_updated)
 	
 	# Registrar eventos antes de conectar
 	EventBus.register_event("_update_chapter_editor")
@@ -93,10 +97,6 @@ func _on_graph_node_selected(node):
 	# Verificar se os objetos são válidos antes de emitir
 	if not is_instance_valid(self) or not is_instance_valid(node):
 		return
-		
-	# Registrar o evento se necessário
-	EventBus.register_event("update_block_editor")
-	EventBus.emit("update_block_editor", [node.name, current_chapter])
 
 func _on_add_dialogue_pressed():
 	if not current_chapter or not is_instance_valid(self):
@@ -134,6 +134,14 @@ func _on_add_choice_pressed():
 	
 	current_chapter.add_block(block_id, block_data)
 	_update_chapter_editor(current_chapter)
+
+func _on_characters_updated():
+	# Atualizar todos os nós de diálogo quando os personagens mudam
+	for child in get_children():
+		if child is DialogueBlockNode:
+			child._load_characters()
+			if child.editing:
+				child._update_ui()
 
 func _on_connection_request(from_node, from_port, to_node, to_port):
 	if not current_chapter:
@@ -354,7 +362,7 @@ func _update_connections() -> void:
 	print("=== CONEXÕES RESTAURADAS ===")
 
 func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
-	var block_scene = preload("uid://rj8arjvt7auh")
+	var block_scene = preload("uid://c868usrpognsd")
 	if not block_scene:
 		push_error("Failed to load dialogue block scene")
 		return

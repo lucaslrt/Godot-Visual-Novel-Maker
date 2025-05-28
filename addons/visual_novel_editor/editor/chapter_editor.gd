@@ -1,22 +1,22 @@
 @tool
-extends Panel
+extends Control
+class_name ChapterEditor
 
 # Referências aos nós da UI
-@onready var chapter_list = $VBoxContainer/HSplitContainer/ChapterList/ItemList
-@onready var chapter_name_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterNameEdit
-@onready var chapter_description_edit = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/ChapterDescriptionEdit
-@onready var graph_edit: ChapterEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/GraphEdit
-@onready var block_editor: BlockEditor = $VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/BlockEditor
+@onready var chapter_list = $HSplitContainer/ChapterList/ItemList
+@onready var chapter_name_edit = $HSplitContainer/TabContainer/ChapterEditor/ChapterNameEdit
+@onready var chapter_description_edit = $HSplitContainer/TabContainer/ChapterEditor/ChapterDescriptionEdit
+@onready var graph_edit: ChapterGraphEdit = $HSplitContainer/TabContainer/ChapterEditor/HSplitContainer/GraphEdit
 
 # Capítulo atual sendo editado
 var current_chapter: ChapterResource = null
 
-func _ready():	
+func _ready():
 	# Conectar sinais
-	$VBoxContainer/Toolbar/AddChapterButton.pressed.connect(_on_add_chapter_button_pressed)
-	$VBoxContainer/Toolbar/DeleteChapterButton.pressed.connect(_on_delete_chapter_button_pressed)
-	$VBoxContainer/Toolbar/SaveButton.pressed.connect(_on_save_button_pressed)
-	$VBoxContainer/Toolbar/LoadButton.pressed.connect(_on_load_button_pressed)
+	$Toolbar/AddChapterButton.pressed.connect(_on_add_chapter_button_pressed)
+	$Toolbar/DeleteChapterButton.pressed.connect(_on_delete_chapter_button_pressed)
+	$Toolbar/SaveButton.pressed.connect(_on_save_button_pressed)
+	$Toolbar/LoadButton.pressed.connect(_on_load_button_pressed)
 	
 	# Conectar sinal da lista de capítulos
 	if chapter_list:
@@ -50,7 +50,7 @@ func _delayed_initialization():
 		print("VisualNovelSingleton ainda não disponível")
 
 func _process(delta):
-	# CORRIGIDO: Verificar se graph_edit existe antes de tentar usar
+	# Verificar se graph_edit existe antes de tentar usar
 	if graph_edit:
 		graph_edit.queue_redraw()
 
@@ -162,7 +162,6 @@ func _on_save_button_pressed():
 	current_chapter.chapter_name = chapter_name_edit.text
 	current_chapter.chapter_description = chapter_description_edit.text
 	
-	# CORREÇÃO: Se o nome mudou, atualizar no singleton
 	if old_chapter_name != current_chapter.chapter_name:
 		if VisualNovelSingleton.chapters.has(old_chapter_name):
 			VisualNovelSingleton.chapters.erase(old_chapter_name)
@@ -176,7 +175,6 @@ func _on_save_button_pressed():
 	else:
 		print("Capítulo salvo com sucesso em: ", current_chapter.resource_path)
 		
-		# CORREÇÃO: Também salvar no sistema JSON do singleton
 		VisualNovelSingleton.save_chapters()
 	
 	# Debug detalhado
@@ -403,10 +401,6 @@ func _clear_chapter_editor():
 				graph_edit.remove_child(child)
 				child.queue_free()
 	
-	# Limpar o editor de blocos se existir
-	if block_editor and block_editor.has_method("_clear_block_editor"):
-		block_editor._clear_block_editor()
-
 # Métodos para persistência dos dados
 func _save_chapters():
 	# Esta função duplica a funcionalidade do VisualNovelSingleton
@@ -483,11 +477,6 @@ func add_dialogue_block():
 	
 	if graph_edit and graph_edit.has_method("_update_chapter_editor"):
 		graph_edit._update_chapter_editor(current_chapter)
-	
-	if block_editor:
-		block_editor.current_block_id = block_id
-		if block_editor.has_method("_update_block_editor"):
-			block_editor._update_block_editor(graph_edit.name if graph_edit else "", current_chapter)
 
 func add_choice_block():
 	if not current_chapter:
@@ -515,11 +504,6 @@ func add_choice_block():
 	
 	if graph_edit and graph_edit.has_method("_update_chapter_editor"):
 		graph_edit._update_chapter_editor(current_chapter)
-	
-	if block_editor:
-		block_editor.current_block_id = block_id
-		if block_editor.has_method("_update_block_editor"):
-			block_editor._update_block_editor(graph_edit.name if graph_edit else "", current_chapter)
 
 # Função para debug - pode ser chamada para verificar o estado
 func debug_chapters():
@@ -574,7 +558,6 @@ func _verify_block_sync():
 	
 	print("=== FIM DA VERIFICAÇÃO ===")
 
-# ADICIONADO: Função para forçar refresh manual (útil para debug)
 func force_refresh():
 	print("Forçando refresh da lista...")
 	_refresh_chapter_list()

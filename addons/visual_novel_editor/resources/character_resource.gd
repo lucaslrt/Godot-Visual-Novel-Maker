@@ -10,17 +10,28 @@ class_name CharacterResource
 	"default": null  # A textura default
 }
 
+func _init():
+	# Gerar ID único se estiver vazio
+	if character_id.is_empty():
+		character_id = _generate_simple_id()
+
+# Gerar ID numérico simples baseado em timestamp
+static func _generate_simple_id() -> String:
+	var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
+	var random_num = randi() % 1000
+	return "char_%s_%03d" % [timestamp, random_num]
+
 # Adicionar uma expressão
-func add_expression(name, texture_path):
+func add_expression(name: String, texture_path: String) -> void:
 	expressions[name] = texture_path
-	
+	notify_property_list_changed()  # Forçar atualização do recurso
+
 # Remover uma expressão
-func remove_expression(name):
+func remove_expression(name: String) -> void:
 	if expressions.has(name) and name != "default":
 		expressions.erase(name)
-		
+		notify_property_list_changed()  # Forçar atualização do recurso
+
 # Obter o caminho de textura para uma expressão
-func get_expression_texture(expression_name):
-	if expressions.has(expression_name):
-		return expressions[expression_name]
-	return expressions["default"]  # Fallback para expressão padrão
+func get_expression_texture(expression_name: String) -> String:
+	return expressions.get(expression_name, expressions["default"])

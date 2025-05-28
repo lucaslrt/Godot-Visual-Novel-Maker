@@ -21,14 +21,14 @@ Texto 3
 Texto 2
 -> Continuar |> dialogue_1748369128_6531
 
+:: dialogue_1748369128_6531
+Texto 4
+
+-> Continuar |> end_1748271171_87531
+
 :: end_1748271171_87531
 (Fim do capítulo)
 
 :: start_1748271171_87531
 -> Iniciar |> dialogue_1748271174_96391
-
-:: dialogue_1748369128_6531
-Texto 4
-
--> Continuar |> end_1748271171_87531
 

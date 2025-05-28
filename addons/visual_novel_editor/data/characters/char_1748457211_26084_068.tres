@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CharacterResource" load_steps=2 format=3 uid="uid://d1kodapl3sqbh"]
+
+[ext_resource type="Script" uid="uid://3ki708dr51hn" path="res://addons/visual_novel_editor/resources/character_resource.gd" id="1_i42av"]
+
+[resource]
+script = ExtResource("1_i42av")
+character_id = "char_1748457211_26084_068"
+display_name = "Novo Personagem 2"
+description = "Descrição do personagem"
+expressions = {
+"default": "res://icon.svg"
+}

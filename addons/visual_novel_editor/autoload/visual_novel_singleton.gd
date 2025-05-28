@@ -1,6 +1,8 @@
 @tool
 extends Node
 
+signal characters_updated
+
 # Lista de todos os capítulos disponíveis
 var chapters = {}
 # Lista de todos os personagens
@@ -40,6 +42,7 @@ func register_character(character: CharacterResource) -> void:
 		return
 	
 	characters[character.character_id] = character
+	characters_updated.emit()
 	
 	# Salvar automaticamente apenas se estivermos no editor
 	if Engine.is_editor_hint():
@@ -189,90 +192,68 @@ func save_characters():
 		push_error("Não foi possível acessar o diretório res://")
 		return
 		
-	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
-		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data")
+	if not dir.dir_exists("res://addons/visual_novel_editor/data/characters"):
+		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data/characters")
 		if error != OK:
 			push_error("Erro ao criar diretório: " + str(error))
 			return
 	
-	# Preparar os dados para salvar
-	var save_data = {}
+	# Salvar cada personagem como um arquivo .tres separado
 	for character_id in characters:
 		var character = characters[character_id]
-		
 		if not character:
 			continue
 		
-		# Converter o resource para um formato serializável
-		var character_data = {
-			"character_id": character.character_id,
-			"display_name": character.display_name,
-			"description": character.description,
-			"expressions": character.expressions
-		}
+		# Garantir que o character_id está definido
+		if character.character_id.is_empty():
+			character.character_id = character_id
 		
-		save_data[character_id] = character_data
-	
-	# Salvar os dados em um arquivo JSON
-	var json_string = JSON.stringify(save_data, "\t")
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/characters.json", FileAccess.WRITE)
-	
-	if not file:
-		push_error("Erro ao abrir arquivo para escrita: characters.json")
-		return
-	
-	file.store_string(json_string)
-	file.close()
+		# Definir o caminho do recurso
+		var file_path = "res://addons/visual_novel_editor/data/characters/%s.tres" % character.character_id
+		
+		# Salvar o recurso
+		var error = ResourceSaver.save(character, file_path)
+		if error != OK:
+			push_error("Erro ao salvar personagem %s: %s" % [character_id, error])
+		else:
+			print("Personagem salvo: ", file_path)
+			
+	characters_updated.emit()
 
 func load_characters():
-	# Verificar se o arquivo existe
-	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/characters.json"):
-		print("Arquivo de personagens não encontrado")
-		characters = {}
-		return
-	
-	# Carregar o arquivo JSON
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/characters.json", FileAccess.READ)
-	if not file:
-		push_error("Erro ao abrir arquivo de personagens para leitura")
-		characters = {}
-		return
-		
-	var json_string = file.get_as_text()
-	file.close()
-	
-	if json_string.is_empty():
-		characters = {}
-		return
-	
-	var json = JSON.new()
-	var error = json.parse(json_string)
-	if error != OK:
-		push_error("Erro ao analisar JSON de personagens: " + json.get_error_message() + " na linha " + str(json.get_error_line()))
-		characters = {}
-		return
-	
-	var characters_data = json.get_data()
-	if not characters_data is Dictionary:
-		push_error("Dados de personagens inválidos")
-		characters = {}
-		return
-	
 	# Limpar os personagens existentes
 	characters.clear()
 	
-	# Criar objetos CharacterResource para cada personagem carregado
-	for character_id in characters_data:
-		var char_data = characters_data[character_id]
+	# Verificar se o diretório existe
+	var dir = DirAccess.open("res://addons/visual_novel_editor/data/characters/")
+	if not dir:
+		print("Diretório de personagens não encontrado")
+		return
+	
+	# Listar todos os arquivos .tres no diretório
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	
+	while file_name != "":
+		if file_name.ends_with(".tres"):
+			var file_path = "res://addons/visual_novel_editor/data/characters/" + file_name
+			
+			# Carregar o recurso
+			var character = load(file_path) as CharacterResource
+			if character:
+				# Usar o nome do arquivo como ID se o character_id estiver vazio
+				if character.character_id.is_empty():
+					character.character_id = file_name.get_basename()
+				
+				characters[character.character_id] = character
+				print("Personagem carregado: ", character.display_name)
+			else:
+				push_error("Falha ao carregar personagem: " + file_path)
 		
-		var character = CharacterResource.new()
-		character.character_id = char_data.get("character_id", "")
-		character.display_name = char_data.get("display_name", "")
-		character.description = char_data.get("description", "")
-		character.expressions = char_data.get("expressions", {})
-		
-		characters[character_id] = character
-
+		file_name = dir.get_next()
+	
+	dir.list_dir_end()
+	
 func save_game_state():
 	# Criar a pasta se ela não existir
 	var dir = DirAccess.open("res://")
