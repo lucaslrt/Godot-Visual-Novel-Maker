@@ -3,6 +3,7 @@ extends GraphNode
 class_name DialogueBlockNode
 
 signal block_updated(block_data)
+signal delete_requested(block_id)
 
 var block_data = {}
 var editing := false
@@ -71,6 +72,9 @@ func _update_ui() -> void:
 		toggle_btn.text = "Editar" if not editing else "Visualizar"
 		toggle_btn.pressed.connect(_toggle_edit_mode)
 		add_child(toggle_btn)
+	
+	# Adicionar botão de exclusão
+	_add_delete_button()
 
 func _configure_slots():
 	clear_all_slots()
@@ -350,6 +354,32 @@ func _setup_edit_ui(parent: Control) -> void:
 				_emit_update()
 			)
 			parent.add_child(add_btn)
+
+func _add_delete_button():
+	if block_data["type"] == "start":
+		return  # Não permitir excluir o bloco inicial
+		
+	var delete_btn = Button.new()
+	delete_btn.text = "X"
+	delete_btn.flat = true
+	delete_btn.add_theme_color_override("font_color", Color(0.8, 0.2, 0.2))
+	delete_btn.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+	delete_btn.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+	delete_btn.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+	delete_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	delete_btn.pressed.connect(_on_delete_pressed)
+	
+	# Posicionar no canto superior direito
+	delete_btn.position = Vector2(get_size().x - 25, 5)
+	delete_btn.size = Vector2(20, 20)
+	add_child(delete_btn)
+	
+	# Garantir que o botão fique acima de outros elementos
+	delete_btn.z_index = 100
+
+func _on_delete_pressed():
+	# Emitir sinal para solicitar exclusão
+	delete_requested.emit(name)
 
 func _on_character_selected(index: int):
 	var char_name = characters_cache.keys()[index]

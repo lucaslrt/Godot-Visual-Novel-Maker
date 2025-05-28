@@ -374,6 +374,9 @@ func _add_block_to_graph(block_id: String, block_data: Dictionary) -> void:
 	
 	node.name = str(block_id)
 	
+	# Conectar sinal de exclusão
+	node.delete_requested.connect(_on_block_delete_requested)
+	
 	# Configurar tipo visual
 	match block_data["type"]:
 		"start": node.theme_type_variation = "GraphNodeStart"
@@ -501,6 +504,53 @@ func _get_new_block_position() -> Vector2:
 	)
 	
 	return base_position + random_offset
+
+func _on_block_delete_requested(block_id: String):
+	if not current_chapter:
+		return
+	
+	# Confirmar exclusão com um diálogo
+	var confirm_dialog = ConfirmationDialog.new()
+	confirm_dialog.title = "Confirmar Exclusão"
+	confirm_dialog.dialog_text = "Tem certeza que deseja excluir este bloco?"
+	
+	confirm_dialog.confirmed.connect(func():
+		_delete_block(block_id)
+		confirm_dialog.queue_free()
+	)
+	
+	confirm_dialog.canceled.connect(func():
+		confirm_dialog.queue_free()
+	)
+	
+	add_child(confirm_dialog)
+	confirm_dialog.popup_centered()
+
+func _delete_block(block_id: String):
+	if not current_chapter:
+		return
+	
+	# Verificar se é um bloco start (não deve ser excluído)
+	if current_chapter.blocks.has(block_id) and current_chapter.blocks[block_id]["type"] == "start":
+		push_error("Não é possível excluir o bloco inicial!")
+		return
+	
+	# Remover do capítulo
+	current_chapter.remove_block(block_id)
+	
+	# Remover do GraphEdit
+	var node = get_node_or_null(NodePath(block_id))
+	if node:
+		remove_child(node)
+		node.queue_free()
+	
+	# Atualizar conexões
+	_update_connections()
+	
+	# Forçar salvamento
+	current_chapter.notify_property_list_changed()
+	if current_chapter.resource_path and not current_chapter.resource_path.is_empty():
+		ResourceSaver.save(current_chapter, current_chapter.resource_path)
 
 func _clear_graph():
 	for child in get_children():

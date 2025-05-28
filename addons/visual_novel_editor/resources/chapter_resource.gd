@@ -60,15 +60,47 @@ func has_start_block():
 	return false
 
 # Remover um bloco do capítulo
-func remove_block(block_id):
+func remove_block(block_id: String):
 	if blocks.has(block_id):
+		# Verificar se este bloco é referenciado por outros
+		var referenced_by = []
+		
+		for other_block_id in blocks:
+			var other_block = blocks[other_block_id]
+			
+			match other_block["type"]:
+				"start", "dialogue":
+					if other_block.get("next_block_id", "") == block_id:
+						referenced_by.append(other_block_id)
+				
+				"choice":
+					for choice in other_block.get("choices", []):
+						if choice.get("next_block_id", "") == block_id:
+							referenced_by.append(other_block_id)
+		
+		# Se for referenciado, limpar as referências
+		for ref_id in referenced_by:
+			var ref_block = blocks[ref_id]
+			
+			match ref_block["type"]:
+				"start", "dialogue":
+					ref_block["next_block_id"] = ""
+				
+				"choice":
+					for choice in ref_block.get("choices", []):
+						if choice.get("next_block_id", "") == block_id:
+							choice["next_block_id"] = ""
+		
+		# Remover o bloco
 		blocks.erase(block_id)
 		
-		# Se removemos o bloco inicial, definir outro como inicial (se existir)
+		# Se era o bloco inicial, definir outro como inicial (se existir)
 		if start_block_id == block_id and not blocks.is_empty():
 			start_block_id = blocks.keys()[0]
 		elif blocks.is_empty():
 			start_block_id = ""
+		
+		notify_property_list_changed()
 
 # Obter um bloco específico
 func get_block(block_id):

@@ -5,13 +5,8 @@ start: start_1748434773_1421
 description: Descrição do capítulo
 ---
 
-:: dialogue_1748434779_44754
-Digite o texto aqui...
--> Continuar |> end_1748434773_1421
-
 :: end_1748434773_1421
 (Fim do capítulo)
 
 :: start_1748434773_1421
--> Iniciar |> dialogue_1748434779_44754
 

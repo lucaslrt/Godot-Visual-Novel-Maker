@@ -9,16 +9,6 @@ chapter_name = "Novo Capítulo 2"
 chapter_description = "Descrição do capítulo"
 start_block_id = "start_1748434773_1421"
 blocks = {
-"dialogue_1748434779_44754": {
-"character_expression": "default",
-"character_name": "Juanito",
-"character_position": Vector2(0.5, 1),
-"graph_position": Vector2(880, 320),
-"id": "dialogue_1748434779_44754",
-"next_block_id": "end_1748434773_1421",
-"text": "Digite o texto aqui...",
-"type": "dialogue"
-},
 "end_1748434773_1421": {
 "graph_position": Vector2(2540, 300),
 "id": "end_1748434773_1421",
@@ -26,7 +16,7 @@ blocks = {
 },
 "start_1748434773_1421": {
 "graph_position": Vector2(100, 300),
-"next_block_id": "dialogue_1748434779_44754",
+"next_block_id": "",
 "type": "start"
 }
 }
