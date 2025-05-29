@@ -1,0 +1,25 @@
+---
+title: Novo Capítulo 6
+id: 7a055ae6-c013-4e5e-941a-f9636593ad72
+start: start_1748537406_27888
+description: Descrição do capítulo
+---
+
+:: start_1748537406_27888
+-> Iniciar |> dialogue_1748537508_19898
+
+:: end_1748537406_27888
+(Fim do capítulo)
+
+:: dialogue_1748537508_03199
+Digite o texto aqui...
+-> Continuar |> dialogue_1748537514_4156
+
+:: dialogue_1748537508_19898
+Digite o texto aqui...
+-> Continuar |> dialogue_1748537508_03199
+
+:: dialogue_1748537514_4156
+Novo diálogo...
+-> Continuar |> end_1748537406_27888
+

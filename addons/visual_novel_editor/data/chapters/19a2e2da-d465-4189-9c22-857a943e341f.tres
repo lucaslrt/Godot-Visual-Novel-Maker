@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="ChapterResource" load_steps=2 format=3 uid="uid://bc5haabb4khp0"]
+
+[ext_resource type="Script" uid="uid://boy8tnf7he8ey" path="res://addons/visual_novel_editor/resources/chapter_resource.gd" id="1_lcf2m"]
+
+[resource]
+script = ExtResource("1_lcf2m")
+chapter_id = "19a2e2da-d465-4189-9c22-857a943e341f"
+chapter_name = "Novo Capítulo 4"
+chapter_description = "Descrição do capítulo"
+start_block_id = "start_1748537405_97885"
+blocks = {
+"dialogue_1748537462_02865": {
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": Vector2(0.5, 1),
+"graph_position": Vector2(860, 300),
+"id": "dialogue_1748537462_02865",
+"next_block_id": "dialogue_1748537466_27834",
+"text": "Digite o texto aqui...",
+"type": "dialogue"
+},
+"dialogue_1748537466_27834": {
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": Vector2(0.5, 1),
+"graph_position": Vector2(1660, 300),
+"id": "dialogue_1748537466_27834",
+"next_block_id": "end_1748537405_97885",
+"text": "Digite o texto aqui...",
+"type": "dialogue"
+},
+"end_1748537405_97885": {
+"graph_position": Vector2(2600, 340),
+"id": "end_1748537405_97885",
+"type": "end"
+},
+"start_1748537405_97885": {
+"graph_position": Vector2(100, 300),
+"next_block_id": "dialogue_1748537462_02865",
+"type": "start"
+}
+}

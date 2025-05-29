@@ -9,6 +9,7 @@ var chapters = {}
 var characters = {}
 # Estado atual do jogo
 var game_state = {}
+var chapter_order = []  # Array com os IDs dos capítulos na ordem desejada
 
 # Singleton instance (não necessário em autoload, mas pode ser útil)
 var instance: VisualNovelSingleton
@@ -29,12 +30,23 @@ func register_chapter(chapter: ChapterResource) -> void:
 		push_error("Tentativa de registrar capítulo nulo!")
 		return
 	
+	if chapters == null:
+		chapters = {}
+	
 	print("Registrando capítulo: ", chapter.chapter_name)
 	chapters[chapter.chapter_id] = chapter  # Usando ID como chave
+	
+	if chapter_order == null:
+		chapter_order = []
+	
+	# Adicionar à ordem se não existir
+	if not chapter_order.has(chapter.chapter_id):
+		chapter_order.push_back(chapter.chapter_id)
 	
 	# Salvar automaticamente apenas se estivermos no editor
 	if Engine.is_editor_hint():
 		save_chapters()
+		save_game_state()
 
 func register_character(character: CharacterResource) -> void:
 	if not character:
@@ -220,6 +232,21 @@ func save_characters():
 			
 	characters_updated.emit()
 
+func set_chapter_order(new_order: Array):
+	chapter_order = new_order
+	save_game_state()
+
+func get_chapter_order() -> Array:
+	if chapter_order == null:
+		chapter_order = chapters.keys() if chapters != null else []
+	return chapter_order.duplicate()
+
+func move_chapter_in_order(chapter_id: String, new_index: int):
+	if chapter_order.has(chapter_id):
+		chapter_order.erase(chapter_id)
+		chapter_order.insert(new_index, chapter_id)
+		save_game_state()
+
 func load_characters():
 	# Limpar os personagens existentes
 	characters.clear()
@@ -263,6 +290,9 @@ func save_game_state():
 	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
 		dir.make_dir_recursive("res://addons/visual_novel_editor/data")
 	
+	# Incluir a ordem dos capítulos no estado do jogo
+	game_state["chapter_order"] = chapter_order
+	
 	# Salvar o estado atual do jogo
 	var json_string = JSON.stringify(game_state, "\t")
 	var file = FileAccess.open("res://addons/visual_novel_editor/data/game_state.json", FileAccess.WRITE)
@@ -272,37 +302,31 @@ func save_game_state():
 		file.close()
 
 func load_game_state():
-	# Verificar se o arquivo existe
+	chapters = {}
+	chapter_order = []
+	
 	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/game_state.json"):
-		# Se não existir, iniciar com estado vazio
-		game_state = {}
 		return
 	
-	# Carregar o arquivo JSON
 	var file = FileAccess.open("res://addons/visual_novel_editor/data/game_state.json", FileAccess.READ)
 	if not file:
-		game_state = {}
 		return
 		
 	var json_string = file.get_as_text()
 	file.close()
 	
 	if json_string.is_empty():
-		game_state = {}
 		return
 	
 	var json = JSON.new()
-	var error = json.parse(json_string)
-	if error != OK:
-		push_error("Erro ao analisar JSON do estado do jogo: " + json.get_error_message())
-		game_state = {}
+	if json.parse(json_string) != OK:
 		return
 	
 	var data = json.get_data()
 	if data is Dictionary:
 		game_state = data
-	else:
-		game_state = {}
+		if game_state.has("chapter_order") and game_state["chapter_order"] is Array:
+			chapter_order = game_state["chapter_order"]
 
 func import_script(file_path: String):
 	var file = FileAccess.open(file_path, FileAccess.READ)

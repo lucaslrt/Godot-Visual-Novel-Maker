@@ -25,27 +25,12 @@ func _ready():
 	# Conectar sinal do graph_edit se existir
 	if graph_edit:
 		graph_edit.connect("change_chapter_ui", _on_chapter_data_changed)
-	
-	# Aguardar alguns frames para garantir que tudo esteja inicializado
-	await get_tree().process_frame
-	await get_tree().process_frame
-	
-	# Verificar se o VisualNovelSingleton está disponível
-	if not _check_singleton():
-		print("VisualNovelSingleton não disponível durante _ready")
-		# Tentar novamente após um pequeno delay
-		get_tree().create_timer(0.1).timeout.connect(_delayed_initialization)
-		return
-	
-	# Carregar e atualizar a lista de capítulos
-	_load_chapters()
-	_refresh_chapter_list()
 
 func _delayed_initialization():
 	print("Tentando inicialização atrasada...")
 	if _check_singleton():
 		_load_chapters()
-		_refresh_chapter_list()
+		chapter_list.refresh_chapters()
 	else:
 		print("VisualNovelSingleton ainda não disponível")
 
@@ -91,7 +76,7 @@ func _on_add_chapter_button_pressed():
 	VisualNovelSingleton.register_chapter(new_chapter)
 	
 	# Atualizar a lista
-	_refresh_chapter_list()
+	chapter_list.refresh_chapters()
 	
 	# Selecionar o novo capítulo
 	var new_index = chapter_list.item_count - 1
@@ -124,7 +109,7 @@ func _on_delete_chapter_button_pressed():
 			
 			# Remover do singleton
 			VisualNovelSingleton.chapters.erase(chapter_id_to_delete)
-			_refresh_chapter_list()
+			chapter_list.refresh_chapters()
 			
 			# Limpar editor se necessário
 			if current_chapter and current_chapter.chapter_id == chapter_id_to_delete:
@@ -166,7 +151,7 @@ func _on_save_button_pressed():
 		if VisualNovelSingleton.chapters.has(old_chapter_name):
 			VisualNovelSingleton.chapters.erase(old_chapter_name)
 		VisualNovelSingleton.chapters[current_chapter.chapter_name] = current_chapter
-		_refresh_chapter_list()
+		chapter_list.refresh_chapters()
 	
 	# Salvar o recurso como arquivo .tres
 	var save_result = ResourceSaver.save(current_chapter, current_chapter.resource_path)
@@ -241,7 +226,7 @@ func _on_load_button_pressed():
 		return
 		
 	VisualNovelSingleton.load_chapters()
-	_refresh_chapter_list()
+	chapter_list.refresh_chapters()
 	print("Capítulos carregados!")
 
 # NOVA FUNÇÃO: Carregar arquivos .tres individuais
@@ -320,28 +305,6 @@ func _check_singleton() -> bool:
 	return true
 
 # Métodos para atualizar a UI
-func _refresh_chapter_list():
-	print("_refresh_chapter_list chamado")
-	
-	if not chapter_list:
-		print("chapter_list é null!")
-		return
-		
-	if not _check_singleton():
-		print("VisualNovelSingleton não disponível")
-		return
-	
-	chapter_list.clear()
-	
-	print("Atualizando lista de capítulos. Total: ", VisualNovelSingleton.chapters.size())
-	
-	# Iterar pelos capítulos e mostrar seus nomes
-	for chapter_id in VisualNovelSingleton.chapters:
-		var chapter = VisualNovelSingleton.chapters[chapter_id]
-		chapter_list.add_item(chapter.chapter_name)
-		print("Adicionado capítulo à lista: ", chapter.chapter_name)
-	
-	print("Lista atualizada. Items na lista: ", chapter_list.item_count)
 
 func _update_chapter_ui():
 	if not current_chapter:
@@ -558,6 +521,15 @@ func _verify_block_sync():
 	
 	print("=== FIM DA VERIFICAÇÃO ===")
 
-func force_refresh():
-	print("Forçando refresh da lista...")
-	_refresh_chapter_list()
+func move_selected_chapter_up():
+	chapter_list.move_selected_up()
+
+func move_selected_chapter_down():
+	chapter_list.move_selected_down()
+
+func _find_chapter_id_by_name(chapter_name: String) -> String:
+	for chapter_id in VisualNovelSingleton.chapters:
+		var chapter = VisualNovelSingleton.chapters[chapter_id]
+		if chapter.chapter_name == chapter_name:
+			return chapter_id
+	return ""
