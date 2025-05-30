@@ -69,14 +69,37 @@ func _start_first_chapter():
 	if VisualNovelSingleton.chapters.is_empty():
 		_create_example_chapter()
 	
-	# Pegar o primeiro capítulo disponível
+	# Pegar o primeiro capítulo seguindo a ordem definida em chapter_order
 	var first_chapter = null
-	for chapter_id in VisualNovelSingleton.chapters:
-		first_chapter = VisualNovelSingleton.chapters[chapter_id]
-		break
+	var chapter_order = VisualNovelSingleton.get_chapter_order()
+	
+	if chapter_order.is_empty():
+		print("Nenhuma ordem de capítulos definida, usando o primeiro disponível")
+		# Se não há ordem definida, pegar qualquer um
+		for chapter_id in VisualNovelSingleton.chapters:
+			first_chapter = VisualNovelSingleton.chapters[chapter_id]
+			break
+	else:
+		# Usar a ordem definida em chapter_order
+		for chapter_id in chapter_order:
+			if VisualNovelSingleton.chapters.has(chapter_id):
+				first_chapter = VisualNovelSingleton.chapters[chapter_id]
+				print("Iniciando primeiro capítulo da ordem: ", chapter_id)
+				break
+		
+		# Se o primeiro da ordem não foi encontrado, tentar outros
+		if not first_chapter:
+			print("Primeiro capítulo da ordem não encontrado, procurando alternativa...")
+			for chapter_id in VisualNovelSingleton.chapters:
+				first_chapter = VisualNovelSingleton.chapters[chapter_id]
+				print("Usando capítulo alternativo: ", chapter_id)
+				break
 	
 	if first_chapter:
+		print("Capítulo selecionado: ", first_chapter.chapter_name)
 		visual_novel_manager.start_chapter(first_chapter)
+	else:
+		print("Nenhum capítulo encontrado para iniciar!")
 
 func _create_example_chapter():
 	# Criar um capítulo de exemplo
@@ -171,9 +194,58 @@ func _on_dialogue_advanced(block_id: String):
 
 func _on_dialogue_ended(chapter_name: String):
 	print("Diálogo encerrado: ", chapter_name)
+	
+	# IMPORTANTE: Obter informações do capítulo ANTES de limpar
+	var chapter_info = visual_novel_manager.get_current_chapter_info()
+	var has_next = visual_novel_manager.has_next_chapter()
+	
+	# Agora podemos limpar a interface
 	is_in_dialogue = false
 	dialogue_container.visible = false
 	_clear_character_display()
+	
+	# Verificar se há próximo capítulo usando as informações obtidas
+	if has_next:
+		_show_chapter_end_options(chapter_info)
+	else:
+		_show_story_complete()
+
+func _show_chapter_end_options(chapter_info: Dictionary):
+	# Usar as informações passadas como parâmetro
+	var message = "Capítulo '%s' concluído!\n\nDeseja continuar para o próximo capítulo?" % chapter_info.chapter_name
+	
+	print(message)
+	print("Avançando automaticamente para o próximo capítulo...")
+	print("Capítulo atual: ", chapter_info.current_index + 1, "/", chapter_info.total_chapters)
+	
+	# Obter o próximo capítulo manualmente usando o chapter_order
+	var chapter_order = VisualNovelSingleton.get_chapter_order()
+	var next_index = chapter_info.current_index + 1
+	
+	if next_index < chapter_order.size():
+		var next_chapter_id = chapter_order[next_index]
+		var next_chapter = VisualNovelSingleton.chapters.get(next_chapter_id)
+		
+		if next_chapter:
+			print("Próximo capítulo encontrado: ", next_chapter.chapter_name)
+			# Pequena pausa antes de iniciar o próximo capítulo
+			await get_tree().create_timer(2.0).timeout
+			visual_novel_manager.start_chapter(next_chapter)
+		else:
+			print("Erro: Próximo capítulo não encontrado: ", next_chapter_id)
+			chapter_info.current_index += 1
+			_show_chapter_end_options(chapter_info)
+	else:
+		print("Este era o último capítulo")
+		_show_story_complete()
+
+func _show_story_complete():
+	print("História completa! Todos os capítulos foram concluídos.")
+	# Aqui você poderia mostrar créditos, estatísticas, etc.
+	
+	# Voltar ao menu após alguns segundos
+	await get_tree().create_timer(3.0).timeout
+	get_tree().change_scene_to_file("res://menu.tscn")
 
 func _on_choice_presented(choices: Array):
 	print("Escolhas apresentadas: ", choices)
@@ -400,8 +472,30 @@ func _load_game_state():
 	
 	print("Jogo carregado: ", save_data)
 
-# Entrada do usuário
+# Método auxiliar para debug - mostrar informações do capítulo atual
+func _debug_chapter_info():
+	var info = visual_novel_manager.get_current_chapter_info()
+	if info.is_empty():
+		print("Nenhum capítulo ativo")
+		return
+	
+	print("=== Info do Capítulo Atual ===")
+	print("ID: ", info.chapter_id)
+	print("Nome: ", info.chapter_name)
+	print("Posição: ", info.current_index + 1, "/", info.total_chapters)
+	print("É o último: ", info.is_last_chapter)
+	print("==============================")
+
+# Adicione esta linha ao _input() para debug (opcional)
 func _input(event):
+	if event.is_action_pressed("ui_accept") and is_in_dialogue:
+		if continue_button.visible:
+			_on_continue_pressed()
+	elif event.is_action_pressed("ui_cancel"):
+		system_menu.visible = not system_menu.visible
+	# Debug: pressione F1 para ver info do capítulo atual
+	elif event.is_action_pressed("ui_home"): # ou qualquer outra tecla
+		_debug_chapter_info()
 	if event.is_action_pressed("ui_accept") and is_in_dialogue:
 		if continue_button.visible:
 			_on_continue_pressed()

@@ -302,10 +302,11 @@ func save_game_state():
 		file.close()
 
 func load_game_state():
-	chapters = {}
-	chapter_order = []
 	
 	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/game_state.json"):
+		# Se não existe arquivo de estado, inicializar chapter_order vazio apenas
+		if chapter_order == null:
+			chapter_order = []
 		return
 	
 	var file = FileAccess.open("res://addons/visual_novel_editor/data/game_state.json", FileAccess.READ)
@@ -327,6 +328,9 @@ func load_game_state():
 		game_state = data
 		if game_state.has("chapter_order") and game_state["chapter_order"] is Array:
 			chapter_order = game_state["chapter_order"]
+		# Se não tiver chapter_order salvo, manter o atual ou criar vazio
+		elif chapter_order == null:
+			chapter_order = []
 
 func import_script(file_path: String):
 	var file = FileAccess.open(file_path, FileAccess.READ)
