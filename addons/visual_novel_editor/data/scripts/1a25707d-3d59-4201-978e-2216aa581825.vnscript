@@ -5,13 +5,13 @@ start: start_1748537405_029
 description: Descrição do capítulo
 ---
 
-:: start_1748537405_029
--> Iniciar |> dialogue_1748537412_36217
+:: dialogue_1748537412_36217
+Digite o texto aqui...
+-> Continuar |> end_1748537405_029
 
 :: end_1748537405_029
 (Fim do capítulo)
 
-:: dialogue_1748537412_36217
-Digite o texto aqui...
--> Continuar |> end_1748537405_029
+:: start_1748537405_029
+-> Iniciar |> dialogue_1748537412_36217
 

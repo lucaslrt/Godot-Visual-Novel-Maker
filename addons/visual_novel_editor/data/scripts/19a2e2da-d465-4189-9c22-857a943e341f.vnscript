@@ -5,12 +5,6 @@ start: start_1748537405_97885
 description: Descrição do capítulo
 ---
 
-:: start_1748537405_97885
--> Iniciar |> dialogue_1748537462_02865
-
-:: end_1748537405_97885
-(Fim do capítulo)
-
 :: dialogue_1748537462_02865
 Digite o texto aqui...
 -> Continuar |> dialogue_1748537466_27834
@@ -18,4 +12,10 @@ Digite o texto aqui...
 :: dialogue_1748537466_27834
 Digite o texto aqui...
 -> Continuar |> end_1748537405_97885
+
+:: end_1748537405_97885
+(Fim do capítulo)
+
+:: start_1748537405_97885
+-> Iniciar |> dialogue_1748537462_02865
 

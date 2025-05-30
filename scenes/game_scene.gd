@@ -16,7 +16,9 @@ extends Control
 @onready var save_button = $SystemMenu/MenuPanel/VBoxContainer/SaveButton
 @onready var load_button = $SystemMenu/MenuPanel/VBoxContainer/LoadButton
 @onready var settings_button = $SystemMenu/MenuPanel/VBoxContainer/SettingsButton
-@onready var menu_button = $SystemMenu/MenuPanel/VBoxContainer/MenuButton
+@onready var main_menu_button = $SystemMenu/MenuPanel/VBoxContainer/MainMenuButton
+@onready var close_menu_button = $SystemMenu/MenuPanel/VBoxContainer/CloseButton
+@onready var menu_button = $MenuButton
 
 # Sistema de jogo
 @onready var visual_novel_manager = $VisualNovelManager
@@ -39,7 +41,8 @@ func _ready():
 	save_button.pressed.connect(_on_save_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	settings_button.pressed.connect(_on_settings_pressed)
-	menu_button.pressed.connect(_on_menu_pressed)
+	menu_button.pressed.connect(_on_menu_button_pressed)
+	close_menu_button.pressed.connect(_on_close_menu_pressed)
 	
 	# Configurar interface inicial
 	_setup_initial_ui()
@@ -181,7 +184,6 @@ func _create_example_chapter():
 	# Registrar o capítulo
 	VisualNovelSingleton.register_chapter(example_chapter)
 
-# Manipuladores de eventos do sistema de diálogo
 func _on_dialogue_started(chapter_name: String, block_id: String):
 	print("Diálogo iniciado: ", chapter_name, " - ", block_id)
 	is_in_dialogue = true
@@ -255,7 +257,6 @@ func _on_choice_selected(choice_index: int):
 	print("Escolha selecionada: ", choice_index)
 	_hide_choices()
 
-# Atualizar exibição do diálogo
 func _update_dialogue_display():
 	if not visual_novel_manager.current_chapter_resource:
 		return
@@ -394,7 +395,6 @@ func _hide_choices():
 	choices_panel.visible = false
 	continue_button.visible = true
 
-# Manipuladores de eventos da UI
 func _on_continue_pressed():
 	if is_in_dialogue:
 		visual_novel_manager.advance_dialogue()
@@ -416,11 +416,16 @@ func _on_settings_pressed():
 	print("Configurações não implementadas ainda")
 	system_menu.visible = false
 
+func _on_menu_button_pressed():
+	system_menu.visible = true
+
+func _on_close_menu_pressed():
+	system_menu.visible = false
+
 func _on_menu_pressed():
 	# Voltar ao menu principal
-	get_tree().change_scene_to_file("res://menu.tscn")
+	get_tree().change_scene_to_file("uid://b8k2j3mam4n5o")
 
-# Sistema de save/load
 func _save_game_state():
 	if not visual_novel_manager.current_chapter_resource:
 		print("Nenhum capítulo ativo para salvar")
@@ -472,7 +477,6 @@ func _load_game_state():
 	
 	print("Jogo carregado: ", save_data)
 
-# Método auxiliar para debug - mostrar informações do capítulo atual
 func _debug_chapter_info():
 	var info = visual_novel_manager.get_current_chapter_info()
 	if info.is_empty():
@@ -486,7 +490,6 @@ func _debug_chapter_info():
 	print("É o último: ", info.is_last_chapter)
 	print("==============================")
 
-# Adicione esta linha ao _input() para debug (opcional)
 func _input(event):
 	if event.is_action_pressed("ui_accept") and is_in_dialogue:
 		if continue_button.visible:
@@ -501,28 +504,3 @@ func _input(event):
 			_on_continue_pressed()
 	elif event.is_action_pressed("ui_cancel"):
 		system_menu.visible = not system_menu.visible
-
-# Método auxiliar para criar personagens de exemplo
-func _create_example_characters():
-	# Personagem 1: Narradora
-	var narrator = CharacterResource.new()
-	narrator.character_id = "narrator"
-	narrator.display_name = "Narradora"
-	narrator.description = "A narradora da história"
-	narrator.expressions = {
-		"normal": "res://characters/narrator_normal.png",
-		"happy": "res://characters/narrator_happy.png"
-	}
-	VisualNovelSingleton.register_character(narrator)
-	
-	# Personagem 2: Protagonista
-	var protagonist = CharacterResource.new()
-	protagonist.character_id = "protagonist"
-	protagonist.display_name = "Protagonista"
-	protagonist.description = "O protagonista da história"
-	protagonist.expressions = {
-		"normal": "res://characters/protag_normal.png",
-		"surprised": "res://characters/protag_surprised.png",
-		"happy": "res://characters/protag_happy.png"
-	}
-	VisualNovelSingleton.register_character(protagonist)

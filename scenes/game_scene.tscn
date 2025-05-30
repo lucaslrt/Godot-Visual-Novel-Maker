@@ -144,6 +144,23 @@ offset_bottom = -30.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="MenuButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_hover_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.6, 0.6, 0.6, 1)
+text = "Menu"
+flat = true
+
 [node name="SystemMenu" type="Control" parent="."]
 visible = false
 layout_mode = 1
@@ -218,7 +235,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Configurações"
 
-[node name="MenuButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
+[node name="MainMenuButton" type="Button" parent="SystemMenu/MenuPanel/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

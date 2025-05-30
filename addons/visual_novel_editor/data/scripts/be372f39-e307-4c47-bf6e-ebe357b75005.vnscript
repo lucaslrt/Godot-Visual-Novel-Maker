@@ -5,12 +5,6 @@ start: start_1748537405_56227
 description: Descrição do capítulo
 ---
 
-:: start_1748537405_56227
--> Iniciar |> choice_1748537426_97872
-
-:: end_1748537405_56227
-(Fim do capítulo)
-
 :: choice_1748537426_97872
 -> Opção 1 |> dialogue_1748537433_59538
 -> Opção 2 |> dialogue_1748537433_2501
@@ -22,4 +16,10 @@ Digite o texto aqui...
 :: dialogue_1748537433_59538
 Digite o texto aqui...
 -> Continuar |> end_1748537405_56227
+
+:: end_1748537405_56227
+(Fim do capítulo)
+
+:: start_1748537405_56227
+-> Iniciar |> choice_1748537426_97872
 

@@ -290,47 +290,55 @@ func save_game_state():
 	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
 		dir.make_dir_recursive("res://addons/visual_novel_editor/data")
 	
-	# Incluir a ordem dos capítulos no estado do jogo
-	game_state["chapter_order"] = chapter_order
+	# Criar ou carregar o recurso existente
+	var game_state_path = "res://addons/visual_novel_editor/data/game_state.tres"
+	var game_state_res: GameStateResource
 	
-	# Salvar o estado atual do jogo
-	var json_string = JSON.stringify(game_state, "\t")
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/game_state.json", FileAccess.WRITE)
+	if ResourceLoader.exists(game_state_path):
+		game_state_res = load(game_state_path)
+	else:
+		game_state_res = GameStateResource.new()
 	
-	if file:
-		file.store_string(json_string)
-		file.close()
+	# Atualizar os dados do recurso
+	game_state_res.chapter_order = chapter_order
+	game_state_res.current_save = game_state.get("current_save", {})
+	
+	# Salvar o recurso
+	var error = ResourceSaver.save(game_state_res, game_state_path)
+	if error != OK:
+		push_error("Erro ao salvar game_state.tres: " + str(error))
+	else:
+		print("GameState salvo como .tres")
 
 func load_game_state():
+	# Inicializar estruturas
+	game_state = {}
+	chapter_order = []
 	
-	if not FileAccess.file_exists("res://addons/visual_novel_editor/data/game_state.json"):
-		# Se não existe arquivo de estado, inicializar chapter_order vazio apenas
-		if chapter_order == null:
-			chapter_order = []
+	var game_state_path = "res://addons/visual_novel_editor/data/game_state.tres"
+	
+	if not ResourceLoader.exists(game_state_path):
+		print("Nenhum arquivo game_state.tres encontrado")
+		# Se não existe arquivo, inicializar chapter_order com os capítulos existentes
+		chapter_order = chapters.keys()
 		return
 	
-	var file = FileAccess.open("res://addons/visual_novel_editor/data/game_state.json", FileAccess.READ)
-	if not file:
-		return
-		
-	var json_string = file.get_as_text()
-	file.close()
-	
-	if json_string.is_empty():
+	var game_state_res: GameStateResource = load(game_state_path)
+	if not game_state_res:
+		push_error("Falha ao carregar game_state.tres")
 		return
 	
-	var json = JSON.new()
-	if json.parse(json_string) != OK:
-		return
+	# Carregar dados do recurso
+	chapter_order = game_state_res.chapter_order
+	game_state["current_save"] = game_state_res.current_save
 	
-	var data = json.get_data()
-	if data is Dictionary:
-		game_state = data
-		if game_state.has("chapter_order") and game_state["chapter_order"] is Array:
-			chapter_order = game_state["chapter_order"]
-		# Se não tiver chapter_order salvo, manter o atual ou criar vazio
-		elif chapter_order == null:
-			chapter_order = []
+	# Se chapter_order estiver vazio mas temos capítulos, inicializar com eles
+	if chapter_order.is_empty() and not chapters.is_empty():
+		chapter_order = chapters.keys()
+		print("Inicializando chapter_order com capítulos existentes")
+		save_game_state()  # Salvar a nova ordem
+	
+	print("GameState carregado do arquivo .tres")
 
 func import_script(file_path: String):
 	var file = FileAccess.open(file_path, FileAccess.READ)

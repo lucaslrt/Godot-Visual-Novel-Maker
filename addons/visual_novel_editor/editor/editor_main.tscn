@@ -118,6 +118,12 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
+item_count = 5
+item_0/text = "Novo Capítulo 1"
+item_1/text = "Novo Capítulo 6"
+item_2/text = "Novo Capítulo 2"
+item_3/text = "Novo Capítulo 5"
+item_4/text = "Novo Capítulo 4"
 script = ExtResource("2_1oe52")
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer"]
