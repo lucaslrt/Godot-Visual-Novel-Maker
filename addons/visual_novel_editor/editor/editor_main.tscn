@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://dqma3hdfebua2" path="res://icon.svg" id="3_4uf54"]
 [ext_resource type="Script" uid="uid://d1jvjca74fqrd" path="res://addons/visual_novel_editor/editor/character_editor.gd" id="3_4uoua"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4uoua"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1oe52"]
 bg_color = Color(0.15, 0.15, 0.15, 1)
 border_width_left = 2
 border_width_top = 2
@@ -14,7 +14,7 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1oe52"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pbysd"]
 bg_color = Color(0.8, 0.8, 0.2, 0.8)
 border_width_left = 2
 border_width_top = 2
@@ -22,7 +22,7 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pbysd"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_67hpj"]
 bg_color = Color(0.2, 0.2, 0.8, 0.8)
 border_width_left = 2
 border_width_top = 2
@@ -30,7 +30,7 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_67hpj"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gs2eu"]
 bg_color = Color(0.8, 0.2, 0.2, 0.8)
 border_width_left = 2
 border_width_top = 2
@@ -38,7 +38,7 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gs2eu"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8yu6u"]
 bg_color = Color(0.2, 0.8, 0.2, 0.8)
 border_width_left = 2
 border_width_top = 2
@@ -46,12 +46,12 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.5, 0.5, 0.5, 1)
 
-[sub_resource type="Theme" id="Theme_8yu6u"]
-GraphNode/styles/panel = SubResource("StyleBoxFlat_4uoua")
-GraphNodeChoice/styles/panel = SubResource("StyleBoxFlat_1oe52")
-GraphNodeDialogue/styles/panel = SubResource("StyleBoxFlat_pbysd")
-GraphNodeEnd/styles/panel = SubResource("StyleBoxFlat_67hpj")
-GraphNodeStart/styles/panel = SubResource("StyleBoxFlat_gs2eu")
+[sub_resource type="Theme" id="Theme_3ikk4"]
+GraphNode/styles/panel = SubResource("StyleBoxFlat_1oe52")
+GraphNodeChoice/styles/panel = SubResource("StyleBoxFlat_pbysd")
+GraphNodeDialogue/styles/panel = SubResource("StyleBoxFlat_67hpj")
+GraphNodeEnd/styles/panel = SubResource("StyleBoxFlat_gs2eu")
+GraphNodeStart/styles/panel = SubResource("StyleBoxFlat_8yu6u")
 
 [node name="EditorMain" type="Panel"]
 anchors_preset = 15
@@ -118,9 +118,6 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 2
-item_0/text = "Novo Capítulo 2"
-item_1/text = "Novo Capítulo 1"
 script = ExtResource("2_1oe52")
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer"]
@@ -151,7 +148,7 @@ size_flags_vertical = 3
 [node name="GraphEdit" type="GraphEdit" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer/TabContainer/ChapterEditor/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme = SubResource("Theme_8yu6u")
+theme = SubResource("Theme_3ikk4")
 script = ExtResource("2_m406w")
 
 [node name="Panel" type="Panel" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer/TabContainer/ChapterEditor"]

@@ -1,0 +1,375 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8k2j3mam4n5o"]
+
+[ext_resource type="Script" uid="uid://k5pncof3d2qr" path="res://scenes/main_menu.gd" id="1_main_menu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0, 0, 0, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main_menu")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.15, 0.15, 0.25, 1)
+
+[node name="MenuContainer" type="VBoxContainer" parent="Background"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -300.0
+offset_right = 200.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="Background/MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 48
+text = "VISUAL NOVEL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VSeparator" type="Control" parent="Background/MenuContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="Background/MenuContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="NewGameButton" type="Button" parent="Background/MenuContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Novo Jogo"
+
+[node name="LoadGameButton" type="Button" parent="Background/MenuContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Carregar Jogo"
+
+[node name="SettingsButton" type="Button" parent="Background/MenuContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Configurações"
+
+[node name="QuitButton" type="Button" parent="Background/MenuContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 24
+text = "Sair"
+
+[node name="SettingsPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="SettingsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="SettingsContainer" type="Panel" parent="SettingsPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -250.0
+offset_right = 300.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel/SettingsContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Configurações"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="SettingsPanel/SettingsContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="VolumeContainer" type="VBoxContainer" parent="SettingsPanel/SettingsContainer"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -350.0
+offset_right = 570.0
+offset_bottom = -150.0
+grow_vertical = 0
+theme_override_constants/separation = 15
+
+[node name="MasterVolumeLabel" type="Label" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Volume Geral"
+
+[node name="MasterVolumeSlider" type="HSlider" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="SFXVolumeLabel" type="Label" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Volume dos Efeitos"
+
+[node name="SFXVolumeSlider" type="HSlider" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="MusicVolumeLabel" type="Label" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Volume da Música"
+
+[node name="MusicVolumeSlider" type="HSlider" parent="SettingsPanel/SettingsContainer/VolumeContainer"]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="DisplayContainer" type="VBoxContainer" parent="SettingsPanel/SettingsContainer"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -120.0
+offset_right = 570.0
+offset_bottom = -80.0
+grow_vertical = 0
+
+[node name="FullscreenCheck" type="CheckBox" parent="SettingsPanel/SettingsContainer/DisplayContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Tela Cheia"
+
+[node name="CloseSettingsButton" type="Button" parent="SettingsPanel/SettingsContainer"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -50.0
+offset_right = 570.0
+offset_bottom = -10.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "Fechar"
+
+[node name="NewGameConfirmPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="NewGameConfirmPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="ConfirmContainer" type="Panel" parent="NewGameConfirmPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NewGameConfirmPanel/ConfirmContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="NewGameConfirmPanel/ConfirmContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Confirmação"
+horizontal_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="NewGameConfirmPanel/ConfirmContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 18
+text = "Você tem um jogo salvo.
+Iniciar um novo jogo irá sobrescrever o progresso atual.
+
+Tem certeza que deseja continuar?"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="NewGameConfirmPanel/ConfirmContainer"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -60.0
+offset_right = 470.0
+offset_bottom = -20.0
+grow_vertical = 0
+theme_override_constants/separation = 20
+
+[node name="ConfirmButton" type="Button" parent="NewGameConfirmPanel/ConfirmContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Sim, continuar"
+
+[node name="CancelButton" type="Button" parent="NewGameConfirmPanel/ConfirmContainer/ButtonsContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+text = "Cancelar"
+
+[node name="LoadPanel" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="LoadPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="LoadContainer" type="Panel" parent="LoadPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -300.0
+offset_right = 350.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LoadPanel/LoadContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = -30.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Carregar Jogo"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="LoadPanel/LoadContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LoadPanel/LoadContainer/ScrollContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="CloseLoadButton" type="Button" parent="LoadPanel/LoadContainer/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Fechar"
