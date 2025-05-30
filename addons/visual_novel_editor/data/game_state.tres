@@ -1,8 +1,13 @@
-[gd_resource type="Resource" script_class="GameStateResource" load_steps=2 format=3 uid="uid://bovxo6tt10r6c"]
+[gd_resource type="Resource" script_class="GameStateResource" load_steps=2 format=3]
 
-[ext_resource type="Script" uid="uid://br075tufi5ihg" path="res://addons/visual_novel_editor/resources/game_state_resouce.gd" id="1_g2bce"]
+[ext_resource type="Script" path="res://addons/visual_novel_editor/resources/game_state_resouce.gd" id="1_g2bce"]
 
 [resource]
 script = ExtResource("1_g2bce")
 chapter_order = ["1a25707d-3d59-4201-978e-2216aa581825", "7a055ae6-c013-4e5e-941a-f9636593ad72", "be372f39-e307-4c47-bf6e-ebe357b75005", "47a9e2b9-901f-4e55-a78f-6e040220abfa", "19a2e2da-d465-4189-9c22-857a943e341f"]
-current_save = {}
+current_save = {
+"block_id": "dialogue_1748537412_36217",
+"chapter_id": "1a25707d-3d59-4201-978e-2216aa581825",
+"chapter_name": "Novo Capítulo 1",
+"timestamp": "2025-05-30T17:51:53"
+}

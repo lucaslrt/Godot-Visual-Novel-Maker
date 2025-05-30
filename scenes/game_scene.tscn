@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://bqgvwx8i8m0k3"]
+[gd_scene load_steps=5 format=3 uid="uid://bqgvwx8i8m0k3"]
 
 [ext_resource type="Script" uid="uid://clx6ja8ytcdkk" path="res://scenes/game_scene.gd" id="1_2m8c5"]
 [ext_resource type="Script" uid="uid://d4gfbjfvb4ex8" path="res://scripts/visual_novel_manager.gd" id="2_onqr8"]
+[ext_resource type="Script" uid="uid://cxq8i2asck7ly" path="res://scenes/game_menu.gd" id="2_ycayy"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1xk4s"]
 bg_color = Color(0, 0, 0, 0.8)
@@ -169,6 +170,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("2_ycayy")
 
 [node name="Background" type="ColorRect" parent="SystemMenu"]
 layout_mode = 1

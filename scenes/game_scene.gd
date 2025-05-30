@@ -13,11 +13,6 @@ extends Control
 
 # Menu de sistema
 @onready var system_menu = $SystemMenu
-@onready var save_button = $SystemMenu/MenuPanel/VBoxContainer/SaveButton
-@onready var load_button = $SystemMenu/MenuPanel/VBoxContainer/LoadButton
-@onready var settings_button = $SystemMenu/MenuPanel/VBoxContainer/SettingsButton
-@onready var main_menu_button = $SystemMenu/MenuPanel/VBoxContainer/MainMenuButton
-@onready var close_menu_button = $SystemMenu/MenuPanel/VBoxContainer/CloseButton
 @onready var menu_button = $MenuButton
 
 # Sistema de jogo
@@ -38,11 +33,16 @@ func _ready():
 	
 	# Conectar botões
 	continue_button.pressed.connect(_on_continue_pressed)
-	save_button.pressed.connect(_on_save_pressed)
-	load_button.pressed.connect(_on_load_pressed)
-	settings_button.pressed.connect(_on_settings_pressed)
 	menu_button.pressed.connect(_on_menu_button_pressed)
-	close_menu_button.pressed.connect(_on_close_menu_pressed)
+	
+	# Conectar sinais do menu do sistema (padrão Observer)
+	system_menu.save_requested.connect(_on_save_requested)
+	system_menu.load_requested.connect(_on_load_requested)
+	system_menu.settings_requested.connect(_on_settings_requested)
+	system_menu.menu_closed.connect(_on_menu_closed)
+	
+	# Injetar dependência no menu do sistema
+	system_menu.initialize(self)
 	
 	# Configurar interface inicial
 	_setup_initial_ui()
@@ -69,8 +69,8 @@ func _start_first_chapter():
 	VisualNovelSingleton.load_all_data()
 	
 	# Se não há capítulos, criar um de exemplo
-	if VisualNovelSingleton.chapters.is_empty():
-		_create_example_chapter()
+	#if VisualNovelSingleton.chapters.is_empty():
+		#_create_example_chapter()
 	
 	# Pegar o primeiro capítulo seguindo a ordem definida em chapter_order
 	var first_chapter = null
@@ -104,86 +104,7 @@ func _start_first_chapter():
 	else:
 		print("Nenhum capítulo encontrado para iniciar!")
 
-func _create_example_chapter():
-	# Criar um capítulo de exemplo
-	var example_chapter = ChapterResource.new()
-	example_chapter.chapter_name = "Capítulo de Exemplo"
-	example_chapter.chapter_description = "Um exemplo básico de visual novel"
-	
-	# Bloco inicial
-	var start_id = "start_example"
-	example_chapter.blocks[start_id] = {
-		"type": "start",
-		"next_block_id": "dialogue_1",
-		"graph_position": Vector2(100, 100)
-	}
-	example_chapter.start_block_id = start_id
-	
-	# Primeiro diálogo
-	example_chapter.blocks["dialogue_1"] = {
-		"type": "dialogue",
-		"character_name": "Narradora",
-		"character_expression": "normal",
-		"text": "Bem-vindo ao exemplo de Visual Novel! Este é seu primeiro diálogo.",
-		"next_block_id": "dialogue_2",
-		"graph_position": Vector2(300, 100)
-	}
-	
-	# Segundo diálogo
-	example_chapter.blocks["dialogue_2"] = {
-		"type": "dialogue",
-		"character_name": "Protagonista",
-		"character_expression": "surprised",
-		"text": "Uau! Isso realmente funciona. O que posso fazer agora?",
-		"next_block_id": "choice_1",
-		"graph_position": Vector2(500, 100)
-	}
-	
-	# Primeira escolha
-	example_chapter.blocks["choice_1"] = {
-		"type": "choice",
-		"choices": [
-			{
-				"text": "Explorar o sistema",
-				"next_block_id": "dialogue_explore"
-			},
-			{
-				"text": "Encerrar a demonstração",
-				"next_block_id": "dialogue_end"
-			}
-		],
-		"graph_position": Vector2(700, 100)
-	}
-	
-	# Diálogo de exploração
-	example_chapter.blocks["dialogue_explore"] = {
-		"type": "dialogue",
-		"character_name": "Narradora",
-		"character_expression": "happy",
-		"text": "Ótima escolha! Você pode salvar, carregar e interagir com os personagens.",
-		"next_block_id": "end_block",
-		"graph_position": Vector2(900, 50)
-	}
-	
-	# Diálogo de encerramento
-	example_chapter.blocks["dialogue_end"] = {
-		"type": "dialogue",
-		"character_name": "Narradora",
-		"character_expression": "normal",
-		"text": "Entendi. Obrigada por testar o sistema!",
-		"next_block_id": "end_block",
-		"graph_position": Vector2(900, 150)
-	}
-	
-	# Bloco final
-	example_chapter.blocks["end_block"] = {
-		"type": "end",
-		"graph_position": Vector2(1100, 100)
-	}
-	
-	# Registrar o capítulo
-	VisualNovelSingleton.register_chapter(example_chapter)
-
+# ========== CALLBACKS DOS SINAIS DO VISUAL NOVEL MANAGER ==========
 func _on_dialogue_started(chapter_name: String, block_id: String):
 	print("Diálogo iniciado: ", chapter_name, " - ", block_id)
 	is_in_dialogue = true
@@ -212,43 +133,6 @@ func _on_dialogue_ended(chapter_name: String):
 	else:
 		_show_story_complete()
 
-func _show_chapter_end_options(chapter_info: Dictionary):
-	# Usar as informações passadas como parâmetro
-	var message = "Capítulo '%s' concluído!\n\nDeseja continuar para o próximo capítulo?" % chapter_info.chapter_name
-	
-	print(message)
-	print("Avançando automaticamente para o próximo capítulo...")
-	print("Capítulo atual: ", chapter_info.current_index + 1, "/", chapter_info.total_chapters)
-	
-	# Obter o próximo capítulo manualmente usando o chapter_order
-	var chapter_order = VisualNovelSingleton.get_chapter_order()
-	var next_index = chapter_info.current_index + 1
-	
-	if next_index < chapter_order.size():
-		var next_chapter_id = chapter_order[next_index]
-		var next_chapter = VisualNovelSingleton.chapters.get(next_chapter_id)
-		
-		if next_chapter:
-			print("Próximo capítulo encontrado: ", next_chapter.chapter_name)
-			# Pequena pausa antes de iniciar o próximo capítulo
-			await get_tree().create_timer(2.0).timeout
-			visual_novel_manager.start_chapter(next_chapter)
-		else:
-			print("Erro: Próximo capítulo não encontrado: ", next_chapter_id)
-			chapter_info.current_index += 1
-			_show_chapter_end_options(chapter_info)
-	else:
-		print("Este era o último capítulo")
-		_show_story_complete()
-
-func _show_story_complete():
-	print("História completa! Todos os capítulos foram concluídos.")
-	# Aqui você poderia mostrar créditos, estatísticas, etc.
-	
-	# Voltar ao menu após alguns segundos
-	await get_tree().create_timer(3.0).timeout
-	get_tree().change_scene_to_file("res://menu.tscn")
-
 func _on_choice_presented(choices: Array):
 	print("Escolhas apresentadas: ", choices)
 	_show_choices(choices)
@@ -257,6 +141,23 @@ func _on_choice_selected(choice_index: int):
 	print("Escolha selecionada: ", choice_index)
 	_hide_choices()
 
+# ========== CALLBACKS DOS SINAIS DO MENU DO SISTEMA ==========
+func _on_save_requested():
+	print("Salvamento solicitado via sinal")
+	system_menu.save_game_state()
+
+func _on_load_requested():
+	print("Carregamento solicitado via sinal")
+	system_menu.load_game_state()
+
+func _on_settings_requested():
+	print("Configurações solicitadas via sinal")
+	_show_settings_menu()
+
+func _on_menu_closed():
+	print("Menu fechado via sinal")
+
+# ========== MÉTODOS DE INTERFACE ==========
 func _update_dialogue_display():
 	if not visual_novel_manager.current_chapter_resource:
 		return
@@ -395,77 +296,56 @@ func _hide_choices():
 	choices_panel.visible = false
 	continue_button.visible = true
 
-func _on_continue_pressed():
-	if is_in_dialogue:
-		visual_novel_manager.advance_dialogue()
-
-func _on_choice_button_pressed(choice_index: int):
-	if is_in_dialogue:
-		visual_novel_manager.select_choice(choice_index)
-
-func _on_save_pressed():
-	_save_game_state()
-	system_menu.visible = false
-
-func _on_load_pressed():
-	_load_game_state()
-	system_menu.visible = false
-
-func _on_settings_pressed():
-	# Implementar menu de configurações
-	print("Configurações não implementadas ainda")
-	system_menu.visible = false
-
-func _on_menu_button_pressed():
-	system_menu.visible = true
-
-func _on_close_menu_pressed():
-	system_menu.visible = false
-
-func _on_menu_pressed():
-	# Voltar ao menu principal
-	get_tree().change_scene_to_file("uid://b8k2j3mam4n5o")
-
-func _save_game_state():
-	if not visual_novel_manager.current_chapter_resource:
-		print("Nenhum capítulo ativo para salvar")
-		return
+# ========== GERENCIAMENTO DE CAPÍTULOS ==========
+func _show_chapter_end_options(chapter_info: Dictionary):
+	# Usar as informações passadas como parâmetro
+	var message = "Capítulo '%s' concluído!\n\nDeseja continuar para o próximo capítulo?" % chapter_info.chapter_name
 	
-	var save_data = {
-		"chapter_id": visual_novel_manager.current_chapter_resource.chapter_id,
-		"block_id": visual_novel_manager.current_block_id,
-		"timestamp": Time.get_datetime_string_from_system()
-	}
+	print(message)
+	print("Avançando automaticamente para o próximo capítulo...")
+	print("Capítulo atual: ", chapter_info.current_index + 1, "/", chapter_info.total_chapters)
 	
-	# Salvar no singleton
-	VisualNovelSingleton.game_state["current_save"] = save_data
-	VisualNovelSingleton.save_game_state()
+	# Obter o próximo capítulo manualmente usando o chapter_order
+	var chapter_order = VisualNovelSingleton.get_chapter_order()
+	var next_index = chapter_info.current_index + 1
 	
-	print("Jogo salvo: ", save_data)
+	if next_index < chapter_order.size():
+		var next_chapter_id = chapter_order[next_index]
+		var next_chapter = VisualNovelSingleton.chapters.get(next_chapter_id)
+		
+		if next_chapter:
+			print("Próximo capítulo encontrado: ", next_chapter.chapter_name)
+			# Pequena pausa antes de iniciar o próximo capítulo
+			await get_tree().create_timer(2.0).timeout
+			visual_novel_manager.start_chapter(next_chapter)
+		else:
+			print("Erro: Próximo capítulo não encontrado: ", next_chapter_id)
+			chapter_info.current_index += 1
+			_show_chapter_end_options(chapter_info)
+	else:
+		print("Este era o último capítulo")
+		_show_story_complete()
 
-func _load_game_state():
-	# Carregar do singleton
-	VisualNovelSingleton.load_game_state()
+func _show_story_complete():
+	print("História completa! Todos os capítulos foram concluídos.")
 	
-	var save_data = VisualNovelSingleton.game_state.get("current_save", {})
+	# Criar diálogo de conclusão
+	var completion_dialog = AcceptDialog.new()
+	completion_dialog.dialog_text = "Parabéns! Você completou toda a história!\n\nObrigado por jogar!"
+	completion_dialog.title = "História Completa"
+	completion_dialog.get_ok_button().text = "Voltar ao Menu"
 	
-	if save_data.is_empty():
-		print("Nenhum save encontrado")
-		return
+	add_child(completion_dialog)
+	completion_dialog.popup_centered()
 	
-	var chapter_id = save_data.get("chapter_id", "")
-	var block_id = save_data.get("block_id", "")
-	
-	if chapter_id.is_empty() or block_id.is_empty():
-		print("Dados de save inválidos")
-		return
-	
-	# Encontrar e carregar o capítulo
-	var chapter = VisualNovelSingleton.chapters.get(chapter_id)
-	if not chapter:
-		print("Capítulo não encontrado: ", chapter_id)
-		return
-	
+	completion_dialog.confirmed.connect(func():
+		completion_dialog.queue_free()
+		get_tree().change_scene_to_file("res://menu.tscn")
+	)
+
+# ========== SISTEMA DE SAVE/LOAD ==========
+func restore_game_state(chapter: Resource, block_id: String):
+	"""Método chamado pelo menu do sistema para restaurar o estado do jogo"""
 	# Restaurar estado
 	visual_novel_manager.current_chapter_resource = chapter
 	visual_novel_manager.current_block_id = block_id
@@ -475,8 +355,66 @@ func _load_game_state():
 	dialogue_container.visible = true
 	_update_dialogue_display()
 	
-	print("Jogo carregado: ", save_data)
+	print("Estado do jogo restaurado - Capítulo: ", chapter.chapter_name, " Bloco: ", block_id)
 
+# ========== MENU DE CONFIGURAÇÕES ==========
+func _show_settings_menu():
+	"""Implementação básica do menu de configurações"""
+	var settings_dialog = AcceptDialog.new()
+	settings_dialog.title = "Configurações"
+	settings_dialog.get_ok_button().text = "Fechar"
+	
+	var vbox = VBoxContainer.new()
+	settings_dialog.add_child(vbox)
+	
+	# Volume Master
+	var volume_label = Label.new()
+	volume_label.text = "Volume Master:"
+	vbox.add_child(volume_label)
+	
+	var volume_slider = HSlider.new()
+	volume_slider.min_value = 0.0
+	volume_slider.max_value = 1.0
+	volume_slider.step = 0.1
+	volume_slider.value = AudioServer.get_bus_volume_db(0)
+	volume_slider.custom_minimum_size = Vector2(200, 30)
+	vbox.add_child(volume_slider)
+	
+	# Conectar slider
+	volume_slider.value_changed.connect(func(value):
+		AudioServer.set_bus_volume_db(0, value)
+	)
+	
+	# Velocidade do texto
+	var text_speed_label = Label.new()
+	text_speed_label.text = "Velocidade do Texto:"
+	vbox.add_child(text_speed_label)
+	
+	var text_speed_slider = HSlider.new()
+	text_speed_slider.min_value = 0.5
+	text_speed_slider.max_value = 3.0
+	text_speed_slider.step = 0.1
+	text_speed_slider.value = 1.0
+	text_speed_slider.custom_minimum_size = Vector2(200, 30)
+	vbox.add_child(text_speed_slider)
+	
+	add_child(settings_dialog)
+	settings_dialog.popup_centered()
+	settings_dialog.confirmed.connect(func(): settings_dialog.queue_free())
+
+# ========== CALLBACKS DOS BOTÕES ==========
+func _on_continue_pressed():
+	if is_in_dialogue:
+		visual_novel_manager.advance_dialogue()
+
+func _on_choice_button_pressed(choice_index: int):
+	if is_in_dialogue:
+		visual_novel_manager.select_choice(choice_index)
+
+func _on_menu_button_pressed():
+	system_menu.visible = true
+
+# ========== DEBUG E UTILIDADES ==========
 func _debug_chapter_info():
 	var info = visual_novel_manager.get_current_chapter_info()
 	if info.is_empty():
@@ -499,8 +437,3 @@ func _input(event):
 	# Debug: pressione F1 para ver info do capítulo atual
 	elif event.is_action_pressed("ui_home"): # ou qualquer outra tecla
 		_debug_chapter_info()
-	if event.is_action_pressed("ui_accept") and is_in_dialogue:
-		if continue_button.visible:
-			_on_continue_pressed()
-	elif event.is_action_pressed("ui_cancel"):
-		system_menu.visible = not system_menu.visible
