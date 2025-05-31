@@ -47,7 +47,7 @@ func _on_close_menu_pressed():
 	visible = false
 
 func _go_to_main_menu():
-	get_tree().change_scene_to_file("res://menu.tscn")
+	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _show_confirmation_dialog(message: String, callback: Callable):
 	var dialog = AcceptDialog.new()

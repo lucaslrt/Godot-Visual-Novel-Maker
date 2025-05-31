@@ -15,6 +15,8 @@ extends Control
 @onready var system_menu = $SystemMenu
 @onready var menu_button = $MenuButton
 
+@onready var transition_manager = TransitionManager
+
 # Sistema de jogo
 @onready var visual_novel_manager = $VisualNovelManager
 var current_save_data = {}
@@ -30,6 +32,11 @@ func _ready():
 	visual_novel_manager.dialogue_ended.connect(_on_dialogue_ended)
 	visual_novel_manager.choice_presented.connect(_on_choice_presented)
 	visual_novel_manager.choice_selected.connect(_on_choice_selected)
+	
+	# Sinais de transição
+	transition_manager.transition_started.connect(_on_transition_started)
+	transition_manager.transition_middle.connect(_on_transition_middle)
+	transition_manager.transition_finished.connect(_on_transition_finished)
 	
 	# Conectar botões
 	continue_button.pressed.connect(_on_continue_pressed)
@@ -298,14 +305,12 @@ func _hide_choices():
 
 # ========== GERENCIAMENTO DE CAPÍTULOS ==========
 func _show_chapter_end_options(chapter_info: Dictionary):
-	# Usar as informações passadas como parâmetro
 	var message = "Capítulo '%s' concluído!\n\nDeseja continuar para o próximo capítulo?" % chapter_info.chapter_name
 	
 	print(message)
 	print("Avançando automaticamente para o próximo capítulo...")
-	print("Capítulo atual: ", chapter_info.current_index + 1, "/", chapter_info.total_chapters)
 	
-	# Obter o próximo capítulo manualmente usando o chapter_order
+	# Obter o próximo capítulo
 	var chapter_order = VisualNovelSingleton.get_chapter_order()
 	var next_index = chapter_info.current_index + 1
 	
@@ -315,16 +320,28 @@ func _show_chapter_end_options(chapter_info: Dictionary):
 		
 		if next_chapter:
 			print("Próximo capítulo encontrado: ", next_chapter.chapter_name)
-			# Pequena pausa antes de iniciar o próximo capítulo
-			await get_tree().create_timer(2.0).timeout
-			visual_novel_manager.start_chapter(next_chapter)
+			
+			# Usar TransitionManager para transição entre capítulos
+			transition_manager.transition_between_chapters(
+				visual_novel_manager.current_chapter_resource,
+				next_chapter,
+				TransitionManager.TransitionType.DISSOLVE,
+				2.0
+			)
+			
+			# Conectar sinal para iniciar o capítulo no meio da transição
+			if not transition_manager.transition_middle.is_connected(_start_next_chapter):
+				transition_manager.transition_middle.connect(_start_next_chapter.bind(next_chapter), CONNECT_ONE_SHOT)
 		else:
 			print("Erro: Próximo capítulo não encontrado: ", next_chapter_id)
-			chapter_info.current_index += 1
-			_show_chapter_end_options(chapter_info)
+			_show_story_complete()
 	else:
 		print("Este era o último capítulo")
 		_show_story_complete()
+
+func _start_next_chapter(chapter: Resource):
+	"""Inicia o próximo capítulo durante a transição"""
+	visual_novel_manager.start_chapter(chapter)
 
 func _show_story_complete():
 	print("História completa! Todos os capítulos foram concluídos.")
@@ -340,7 +357,13 @@ func _show_story_complete():
 	
 	completion_dialog.confirmed.connect(func():
 		completion_dialog.queue_free()
-		get_tree().change_scene_to_file("res://menu.tscn")
+		# Usar transição para voltar ao menu
+		transition_manager.transition_between_scenes(
+			"res://scenes/game_scene.tscn",
+			"res://scenes/main_menu.tscn",
+			TransitionManager.TransitionType.FADE,
+			1.0
+		)
 	)
 
 # ========== SISTEMA DE SAVE/LOAD ==========
@@ -413,6 +436,19 @@ func _on_choice_button_pressed(choice_index: int):
 
 func _on_menu_button_pressed():
 	system_menu.visible = true
+
+# ========== ANIMAÇOES ==========
+func _on_transition_started(transition_type: TransitionManager.TransitionType):
+	print("Transição iniciada: ", transition_type)
+	# Pode pausar animações, ocultar UI temporariamente, etc.
+
+func _on_transition_middle():
+	print("Meio da transição - momento ideal para mudanças")
+	# Aqui você pode atualizar estados, trocar sprites, etc.
+
+func _on_transition_finished(transition_type: TransitionManager.TransitionType):
+	print("Transição finalizada: ", transition_type)
+	# Reativar controles, mostrar UI, etc.
 
 # ========== DEBUG E UTILIDADES ==========
 func _debug_chapter_info():

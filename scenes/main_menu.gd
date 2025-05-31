@@ -26,6 +26,8 @@ extends Control
 @onready var save_slots_container = $LoadPanel/LoadContainer/ScrollContainer/SaveSlotsContainer
 @onready var close_load_button = $LoadPanel/LoadContainer/ScrollContainer/VBoxContainer/CloseLoadButton
 
+@onready var transition_manager = TransitionManager
+
 # Configurações do jogo
 var game_settings = {
 	"master_volume": 1.0,
@@ -138,10 +140,13 @@ func _start_new_game():
 		VisualNovelSingleton.game_state.erase("current_save")
 		VisualNovelSingleton.save_game_state()
 	
-	# Ir para a cena do jogo
-	var error = get_tree().change_scene_to_file("res://scenes/game_scene.tscn")
-	if error != OK:
-		push_error("Erro ao carregar cena do jogo: " + str(error))
+	# Usar TransitionManager ao invés de change_scene_to_file diretamente
+	transition_manager.transition_between_scenes(
+		"res://scenes/main_menu.tscn",
+		"res://scenes/game_scene.tscn",
+		TransitionManager.TransitionType.FADE,
+		1.5
+	)
 
 func _on_confirm_new_game_pressed():
 	new_game_confirm_panel.visible = false
@@ -235,10 +240,13 @@ func _on_load_save_pressed(save_data: Dictionary):
 		VisualNovelSingleton.game_state["current_save"] = save_data
 		VisualNovelSingleton.save_game_state()
 	
-	# Ir para a cena do jogo
-	var error = get_tree().change_scene_to_file("res://scenes/game_scene.tscn")
-	if error != OK:
-		push_error("Erro ao carregar cena do jogo: " + str(error))
+	# Usar transição personalizada para loads
+	transition_manager.transition_between_scenes(
+		"res://scenes/main_menu.tscn",
+		"res://scenes/game_scene.tscn",
+		TransitionManager.TransitionType.DISSOLVE,
+		2.0
+	)
 
 func _on_close_load_pressed():
 	load_panel.visible = false
