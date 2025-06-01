@@ -1,6 +1,9 @@
 # transition_manager.gd
 extends CanvasLayer
 
+const MAIN_MENU_PATH = "res://scenes/main_menu/main_menu.tscn"
+const GAME_SCENE_PATH = "res://scenes/game/game_scene.tscn"
+
 # Enum para tipos de transição
 enum TransitionType {
 	FADE,
@@ -102,6 +105,9 @@ func _load_shaders():
 
 func transition_between_scenes(from_scene: String, to_scene: String, transition_type: TransitionType = TransitionType.FADE, duration: float = 1.0):
 	"""Faz transição entre duas cenas"""
+	print("Iniciando transição entre cenas")
+	print("From: ", from_scene)
+	print("To: ", to_scene)
 	if is_transitioning:
 		print("TransitionManager: Já existe uma transição em andamento")
 		return
@@ -144,7 +150,7 @@ func _execute_transition_out(transition_type: TransitionType, duration: float):
 	# Configurar shader para transição de saída
 	match transition_type:
 		TransitionType.FADE:
-			pass #transition_material.set_shader_parameter("transition_phase", 0) # 0 = fade out
+			pass
 		TransitionType.SLIDE_LEFT:
 			transition_material.set_shader_parameter("direction", Vector2(-1.0, 0.0))
 		TransitionType.SLIDE_RIGHT:
@@ -159,7 +165,7 @@ func _execute_transition_in(transition_type: TransitionType, duration: float):
 	# Configurar shader para transição de entrada
 	match transition_type:
 		TransitionType.FADE:
-			pass #transition_material.set_shader_parameter("transition_phase", 0) # 1 = fade in
+			pass
 		# Para slides, a direção já está configurada
 	
 	var tween = create_tween()

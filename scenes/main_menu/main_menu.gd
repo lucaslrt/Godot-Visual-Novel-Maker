@@ -23,8 +23,8 @@ extends Control
 
 # Painel de seleção de save
 @onready var load_panel = $LoadPanel
-@onready var save_slots_container = $LoadPanel/LoadContainer/ScrollContainer/SaveSlotsContainer
-@onready var close_load_button = $LoadPanel/LoadContainer/ScrollContainer/VBoxContainer/CloseLoadButton
+@onready var save_slots_container = $LoadPanel/LoadContainer/VBoxContainer/ScrollContainer/SaveSlotsContainer
+@onready var close_load_button = $LoadPanel/LoadContainer/VBoxContainer/CloseLoadButton
 
 @onready var transition_manager = TransitionManager
 
@@ -55,6 +55,9 @@ func _ready():
 	# Conectar sinais do painel de confirmação
 	confirm_new_game_button.pressed.connect(_on_confirm_new_game_pressed)
 	cancel_new_game_button.pressed.connect(_on_cancel_new_game_pressed)
+	
+	load_panel.save_loaded.connect(_on_save_loaded)
+	load_panel.panel_closed.connect(_on_load_panel_closed)
 	
 	# Conectar sinal do painel de load
 	close_load_button.pressed.connect(_on_close_load_pressed)
@@ -111,10 +114,6 @@ func _on_new_game_pressed():
 		# Iniciar novo jogo diretamente
 		_start_new_game()
 
-func _on_load_game_pressed():
-	print("Load Game pressionado")
-	_show_load_panel()
-
 func _on_settings_pressed():
 	print("Settings pressionado")
 	settings_panel.visible = true
@@ -125,28 +124,48 @@ func _on_quit_pressed():
 
 # Sistema de novo jogo
 func _has_existing_save() -> bool:
-	# Verificar se existe um save no VisualNovelSingleton
-	if not VisualNovelSingleton:
+	if not VisualNovelManager:
 		return false
 	
-	VisualNovelSingleton.load_game_state()
-	return VisualNovelSingleton.game_state.has("current_save")
+	VisualNovelManager.load_game_state()
+	return not VisualNovelManager.game_state["save_slots"].is_empty()
 
 func _start_new_game():
 	print("Iniciando novo jogo...")
 	
-	# Limpar save atual se existir
-	if VisualNovelSingleton:
-		VisualNovelSingleton.game_state.erase("current_save")
-		VisualNovelSingleton.save_game_state()
+	# Encontrar slot disponível ou último slot
+	var slot_to_use = _find_available_save_slot()
 	
-	# Usar TransitionManager ao invés de change_scene_to_file diretamente
-	transition_manager.transition_between_scenes(
-		"res://scenes/main_menu.tscn",
-		"res://scenes/game_scene.tscn",
-		TransitionManager.TransitionType.FADE,
-		1.5
-	)
+	if slot_to_use == -1:
+		# Todos os slots cheios, perguntar se quer sobrescrever o último
+		_show_confirmation_dialog(
+			"Todos os slots de save estão ocupados. Deseja sobrescrever o último slot?",
+			func():
+				var last_slot = VisualNovelManager.MAX_SAVE_SLOTS - 1
+				_create_new_game_in_slot(last_slot)
+		)
+	else:
+		# Usar slot disponível encontrado
+		_create_new_game_in_slot(slot_to_use)
+
+func _find_available_save_slot() -> int:
+	# Verificar se há slots vazios
+	for i in range(VisualNovelManager.MAX_SAVE_SLOTS):
+		if not VisualNovelManager.game_state["save_slots"].has(i):
+			return i
+	return -1
+
+func _create_new_game_in_slot(slot_index: int):
+	if VisualNovelManager.create_new_save(slot_index):
+		transition_manager.transition_between_scenes(
+			transition_manager.MAIN_MENU_PATH,
+			transition_manager.GAME_SCENE_PATH,
+			TransitionManager.TransitionType.FADE,
+			1.5
+		)
+	else:
+		push_error("Falha ao criar novo save no slot %d" % slot_index)
+		_show_notification("Falha ao criar novo jogo!")
 
 func _on_confirm_new_game_pressed():
 	new_game_confirm_panel.visible = false
@@ -155,95 +174,35 @@ func _on_confirm_new_game_pressed():
 func _on_cancel_new_game_pressed():
 	new_game_confirm_panel.visible = false
 
-# Sistema de load
-func _show_load_panel():
-	load_panel.visible = true
-	_populate_save_slots()
+func _on_load_game_pressed():
+	load_panel.show_panel()
 
-func _populate_save_slots():
-	# Limpar slots existentes
-	for child in save_slots_container.get_children():
-		child.queue_free()
-	
-	# Verificar se há saves disponíveis
-	if not VisualNovelSingleton:
-		_create_no_saves_label()
-		return
-	
-	VisualNovelSingleton.load_game_state()
-	var save_data = VisualNovelSingleton.game_state.get("current_save", {})
-	
-	if save_data.is_empty():
-		_create_no_saves_label()
-		return
-	
-	# Criar slot de save
-	var save_slot = _create_save_slot(save_data, 0)
-	save_slots_container.add_child(save_slot)
+func _on_save_loaded(slot_index: int):
+	if VisualNovelManager.load_save(slot_index):
+		transition_manager.transition_between_scenes(
+			transition_manager.MAIN_MENU_PATH,
+			transition_manager.GAME_SCENE_PATH,
+			TransitionManager.TransitionType.DISSOLVE,
+			2.0
+		)
+	else:
+		_show_notification("Falha ao carregar o save!")
 
-func _create_no_saves_label():
-	var label = Label.new()
-	label.text = "Nenhum save encontrado"
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 18)
-	save_slots_container.add_child(label)
-
-func _create_save_slot(save_data: Dictionary, slot_index: int) -> Control:
-	var slot_container = Panel.new()
-	slot_container.custom_minimum_size = Vector2(500, 80)
-	
-	# Criar estilo para o painel
-	var style_box = StyleBoxFlat.new()
-	style_box.bg_color = Color(0.2, 0.2, 0.3, 0.8)
-	style_box.corner_radius_top_left = 5
-	style_box.corner_radius_top_right = 5
-	style_box.corner_radius_bottom_left = 5
-	style_box.corner_radius_bottom_right = 5
-	slot_container.add_theme_stylebox_override("panel", style_box)
-	
-	var hbox = HBoxContainer.new()
-	hbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	hbox.add_theme_constant_override("separation", 20)
-	slot_container.add_child(hbox)
-	
-	# Informações do save
-	var info_container = VBoxContainer.new()
-	info_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_child(info_container)
-	
-	# Data/hora do save
-	var timestamp_label = Label.new()
-	timestamp_label.text = "Salvo em: " + save_data.get("timestamp", "Desconhecido")
-	timestamp_label.add_theme_font_size_override("font_size", 14)
-	info_container.add_child(timestamp_label)
-	
-	# Capítulo atual
-	var chapter_label = Label.new()
-	chapter_label.text = "Capítulo: " + save_data.get("chapter_id", "Desconhecido")
-	chapter_label.add_theme_font_size_override("font_size", 16)
-	info_container.add_child(chapter_label)
-	
-	# Botão de carregar
-	var load_button = Button.new()
-	load_button.text = "Carregar"
-	load_button.custom_minimum_size = Vector2(100, 60)
-	load_button.pressed.connect(_on_load_save_pressed.bind(save_data))
-	hbox.add_child(load_button)
-	
-	return slot_container
+func _on_load_panel_closed():
+	_check_save_availability()
 
 func _on_load_save_pressed(save_data: Dictionary):
 	print("Carregando save: ", save_data)
 	
 	# Definir dados de save no singleton
-	if VisualNovelSingleton:
-		VisualNovelSingleton.game_state["current_save"] = save_data
-		VisualNovelSingleton.save_game_state()
+	if VisualNovelManager:
+		VisualNovelManager.game_state["current_save"] = save_data
+		VisualNovelManager.save_game_state()
 	
 	# Usar transição personalizada para loads
 	transition_manager.transition_between_scenes(
-		"res://scenes/main_menu.tscn",
-		"res://scenes/game_scene.tscn",
+		transition_manager.MAIN_MENU_PATH,
+		transition_manager.GAME_SCENE_PATH,
 		TransitionManager.TransitionType.DISSOLVE,
 		2.0
 	)
@@ -353,6 +312,39 @@ func _apply_loaded_settings():
 		fullscreen_check.button_pressed = game_settings["fullscreen"]
 		if game_settings["fullscreen"]:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
+func _show_confirmation_dialog(message: String, callback: Callable):
+	var dialog = ConfirmationDialog.new()
+	dialog.dialog_text = message
+	dialog.title = "Confirmação"
+	
+	dialog.get_ok_button().text = "Sim"
+	dialog.get_cancel_button().text = "Cancelar"
+	
+	add_child(dialog)
+	dialog.popup_centered()
+	
+	dialog.confirmed.connect(func(): 
+		callback.call()
+		dialog.queue_free()
+	)
+	dialog.canceled.connect(func(): dialog.queue_free())
+
+func _show_notification(message: String):
+	var notification = AcceptDialog.new()
+	notification.dialog_text = message
+	notification.title = "Informação"
+	notification.get_ok_button().text = "OK"
+	
+	add_child(notification)
+	notification.popup_centered()
+	notification.confirmed.connect(func(): notification.queue_free())
+	
+	# Auto-fechar após 3 segundos
+	get_tree().create_timer(3.0).timeout.connect(func():
+		if notification and is_instance_valid(notification):
+			notification.queue_free()
+	)
 
 # Entrada do usuário
 func _input(event):

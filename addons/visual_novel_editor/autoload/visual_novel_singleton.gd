@@ -7,8 +7,7 @@ signal characters_updated
 var chapters = {}
 # Lista de todos os personagens
 var characters = {}
-# Estado atual do jogo
-var game_state = {}
+
 var chapter_order = []  # Array com os IDs dos capítulos na ordem desejada
 
 # Singleton instance (não necessário em autoload, mas pode ser útil)
@@ -46,7 +45,7 @@ func register_chapter(chapter: ChapterResource) -> void:
 	# Salvar automaticamente apenas se estivermos no editor
 	if Engine.is_editor_hint():
 		save_chapters()
-		save_game_state()
+		_save_chapter_order()
 
 func register_character(character: CharacterResource) -> void:
 	if not character:
@@ -63,13 +62,13 @@ func register_character(character: CharacterResource) -> void:
 func save_all_data():
 	save_chapters()
 	save_characters()
-	save_game_state()
+	_save_chapter_order()
 
 func load_all_data():
 	print("Carregando todos os dados...")
 	load_chapters()
 	load_characters()
-	load_game_state()
+	_load_chapter_order()
 	print("Dados carregados. Capítulos: ", chapters.size(), " Personagens: ", characters.size())
 
 func save_chapters():
@@ -106,6 +105,54 @@ func save_chapters():
 		print("Capítulo salvo: ", file_path)
 	
 	print("Todos os capítulos foram salvos no formato VNScript!")
+
+func _load_chapter_order():
+	# Carregar chapter_order do .tres
+	var chapter_order_path = "res://addons/visual_novel_editor/data/chapter_order.tres"
+	
+	# Criar a pasta se ela não existir
+	var dir = DirAccess.open("res://")
+	if dir and not dir.dir_exists("res://addons/visual_novel_editor/data"):
+		dir.make_dir_recursive("res://addons/visual_novel_editor/data")
+	
+	if ResourceLoader.exists(chapter_order_path):
+		var chapter_order_res = load(chapter_order_path) as ChapterOrderResource
+		if chapter_order_res:
+			chapter_order = chapter_order_res.chapter_order
+		else:
+			push_error("Falha ao carregar chapter_order.tres")
+			# Criar novo se falhar ao carregar
+			chapter_order = chapters.keys()
+			_save_chapter_order()
+	else:
+		print("Nenhum arquivo chapter_order.tres encontrado, criando novo...")
+		# Se não existe arquivo, inicializar chapter_order com os capítulos existentes
+		chapter_order = chapters.keys()
+		_save_chapter_order()  # Salvar a nova ordem
+
+func _save_chapter_order():
+	# Criar a pasta se ela não existir
+	var dir = DirAccess.open("res://")
+	if not dir:
+		push_error("Não foi possível acessar o diretório res://")
+		return
+		
+	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
+		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data")
+		if error != OK:
+			push_error("Erro ao criar diretório: " + str(error))
+			return
+	
+	# Salvar chapter_order como .tres
+	var chapter_order_path = "res://addons/visual_novel_editor/data/chapter_order.tres"
+	var chapter_order_res = ChapterOrderResource.new()
+	chapter_order_res.chapter_order = chapter_order.duplicate()  # Usar duplicata para evitar referência
+	
+	var error = ResourceSaver.save(chapter_order_res, chapter_order_path)
+	if error != OK:
+		push_error("Erro ao salvar chapter_order.tres: " + str(error))
+	else:
+		print("ChapterOrder salvo como .tres")
 
 func _convert_chapter_to_script(chapter: ChapterResource) -> String:
 	var script = "---\n"
@@ -195,6 +242,7 @@ func load_chapters():
 		
 		file_name = dir.get_next()
 	
+	_load_chapter_order()
 	print("Capítulos carregados com sucesso! Total: ", chapters.size())
 
 func save_characters():
@@ -234,7 +282,8 @@ func save_characters():
 
 func set_chapter_order(new_order: Array):
 	chapter_order = new_order
-	save_game_state()
+	
+	_save_chapter_order()
 
 func get_chapter_order() -> Array:
 	if chapter_order == null:
@@ -245,7 +294,7 @@ func move_chapter_in_order(chapter_id: String, new_index: int):
 	if chapter_order.has(chapter_id):
 		chapter_order.erase(chapter_id)
 		chapter_order.insert(new_index, chapter_id)
-		save_game_state()
+		_save_chapter_order()
 
 func load_characters():
 	# Limpar os personagens existentes
@@ -280,65 +329,6 @@ func load_characters():
 		file_name = dir.get_next()
 	
 	dir.list_dir_end()
-	
-func save_game_state():
-	# Criar a pasta se ela não existir
-	var dir = DirAccess.open("res://")
-	if not dir:
-		return
-		
-	if not dir.dir_exists("res://addons/visual_novel_editor/data"):
-		dir.make_dir_recursive("res://addons/visual_novel_editor/data")
-	
-	# Criar ou carregar o recurso existente
-	var game_state_path = "res://addons/visual_novel_editor/data/game_state.tres"
-	var game_state_res: GameStateResource
-	
-	if ResourceLoader.exists(game_state_path):
-		game_state_res = load(game_state_path)
-	else:
-		game_state_res = GameStateResource.new()
-	
-	# Atualizar os dados do recurso
-	game_state_res.chapter_order = chapter_order
-	game_state_res.current_save = game_state.get("current_save", {})
-	
-	# Salvar o recurso
-	var error = ResourceSaver.save(game_state_res, game_state_path)
-	if error != OK:
-		push_error("Erro ao salvar game_state.tres: " + str(error))
-	else:
-		print("GameState salvo como .tres")
-
-func load_game_state():
-	# Inicializar estruturas
-	game_state = {}
-	chapter_order = []
-	
-	var game_state_path = "res://addons/visual_novel_editor/data/game_state.tres"
-	
-	if not ResourceLoader.exists(game_state_path):
-		print("Nenhum arquivo game_state.tres encontrado")
-		# Se não existe arquivo, inicializar chapter_order com os capítulos existentes
-		chapter_order = chapters.keys()
-		return
-	
-	var game_state_res: GameStateResource = load(game_state_path)
-	if not game_state_res:
-		push_error("Falha ao carregar game_state.tres")
-		return
-	
-	# Carregar dados do recurso
-	chapter_order = game_state_res.chapter_order
-	game_state["current_save"] = game_state_res.current_save
-	
-	# Se chapter_order estiver vazio mas temos capítulos, inicializar com eles
-	if chapter_order.is_empty() and not chapters.is_empty():
-		chapter_order = chapters.keys()
-		print("Inicializando chapter_order com capítulos existentes")
-		save_game_state()  # Salvar a nova ordem
-	
-	print("GameState carregado do arquivo .tres")
 
 func import_script(file_path: String):
 	var file = FileAccess.open(file_path, FileAccess.READ)
@@ -378,7 +368,6 @@ func import_script(file_path: String):
 	save_chapters()
 	print("Roteiro importado com sucesso!")
 
-# ADICIONADO: Função para criar capítulos de teste (útil para debug)
 func create_test_chapters():
 	print("Criando capítulos de teste...")
 	

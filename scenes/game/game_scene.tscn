@@ -1,10 +1,17 @@
-[gd_scene load_steps=5 format=3 uid="uid://bqgvwx8i8m0k3"]
+[gd_scene load_steps=6 format=3 uid="uid://bqgvwx8i8m0k3"]
 
-[ext_resource type="Script" uid="uid://clx6ja8ytcdkk" path="res://scenes/game_scene.gd" id="1_2m8c5"]
-[ext_resource type="Script" uid="uid://d4gfbjfvb4ex8" path="res://scripts/visual_novel_manager.gd" id="2_onqr8"]
-[ext_resource type="Script" uid="uid://cxq8i2asck7ly" path="res://scenes/game_menu.gd" id="2_ycayy"]
+[ext_resource type="Script" uid="uid://clx6ja8ytcdkk" path="res://scenes/game/game_scene.gd" id="1_2m8c5"]
+[ext_resource type="Script" uid="uid://cxq8i2asck7ly" path="res://scenes/game/game_menu.gd" id="2_ycayy"]
+[ext_resource type="Script" uid="uid://drtunhjev7jbp" path="res://scenes/main_menu/load_panel.gd" id="3_ydf3n"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1xk4s"]
+bg_color = Color(0, 0, 0, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6hqhf"]
 bg_color = Color(0, 0, 0, 0.8)
 corner_radius_top_left = 10
 corner_radius_top_right = 10
@@ -249,5 +256,70 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 text = "Fechar Menu"
 
-[node name="VisualNovelManager" type="Node" parent="."]
-script = ExtResource("2_onqr8")
+[node name="LoadPanel" type="Control" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3_ydf3n")
+
+[node name="Background" type="ColorRect" parent="LoadPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="LoadContainer" type="Panel" parent="LoadPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -350.0
+offset_top = -300.0
+offset_right = 350.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6hqhf")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LoadPanel/LoadContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="CloseLoadButton" type="Button" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_font_sizes/font_size = 20
+text = "Fechar"
+
+[node name="TitleLabel" type="Label" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Carregar Jogo"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="LoadPanel/LoadContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SaveSlotsContainer" type="VBoxContainer" parent="LoadPanel/LoadContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 15

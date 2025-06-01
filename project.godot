@@ -19,9 +19,8 @@ config/icon="res://icon.svg"
 VisualNovelSingleton="*res://addons/visual_novel_editor/autoload/visual_novel_singleton.gd"
 EventBus="*res://addons/visual_novel_editor/autoload/event_bus.gd"
 ScriptParser="*res://addons/visual_novel_editor/autoload/script_parser.gd"
-VisualNovelManager="res://scripts/visual_novel_manager.gd"
-SaveLoadManager="*res://scripts/save_load_manager.gd"
-TransitionManager="*res://scenes/transition_manager.gd"
+VisualNovelManager="*res://scripts/visual_novel_manager.gd"
+TransitionManager="*res://scripts/transition_manager.gd"
 
 [editor_plugins]
 

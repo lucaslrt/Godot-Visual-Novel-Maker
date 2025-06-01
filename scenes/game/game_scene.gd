@@ -18,7 +18,7 @@ extends Control
 @onready var transition_manager = TransitionManager
 
 # Sistema de jogo
-@onready var visual_novel_manager = $VisualNovelManager
+@onready var visual_novel_manager = VisualNovelManager
 var current_save_data = {}
 var is_in_dialogue = false
 
@@ -47,9 +47,6 @@ func _ready():
 	system_menu.load_requested.connect(_on_load_requested)
 	system_menu.settings_requested.connect(_on_settings_requested)
 	system_menu.menu_closed.connect(_on_menu_closed)
-	
-	# Injetar dependência no menu do sistema
-	system_menu.initialize(self)
 	
 	# Configurar interface inicial
 	_setup_initial_ui()
@@ -359,8 +356,8 @@ func _show_story_complete():
 		completion_dialog.queue_free()
 		# Usar transição para voltar ao menu
 		transition_manager.transition_between_scenes(
-			"res://scenes/game_scene.tscn",
-			"res://scenes/main_menu.tscn",
+			transition_manager.GAME_SCENE_PATH,
+			transition_manager.MAIN_MENU_PATH,
 			TransitionManager.TransitionType.FADE,
 			1.0
 		)
