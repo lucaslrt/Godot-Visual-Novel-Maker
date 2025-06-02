@@ -7,11 +7,13 @@ class_name CharacterEditor
 @onready var character_name_edit = $HSplitContainer/TabContainer/HBoxContainer/CharacterEditor/CharacterNameEdit
 @onready var character_description_edit = $HSplitContainer/TabContainer/HBoxContainer/CharacterEditor/CharacterDescriptionEdit
 @onready var texture_rect = $HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/TextureRect
+@onready var image_change_button = $HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/TextureRect/Button
 @onready var expression_list = $HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/ExpressionsList
 
 # Personagem atual sendo editado
 var current_character: CharacterResource = null
 var expressions_dir = "res://addons/visual_novel_editor/data/characters/expressions/"
+var expression_selected_index = null
 
 # Referência para o FileDialog
 var file_dialog: FileDialog = null
@@ -24,6 +26,7 @@ func _ready():
 	$Toolbar/LoadButton.pressed.connect(_on_load_button_pressed)
 	$HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/ExpressionsToolbar/AddExpressionButton.pressed.connect(_on_add_expression_pressed)
 	$HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/ExpressionsToolbar/RemoveExpressionButton.pressed.connect(_on_remove_expression_pressed)
+	image_change_button.pressed.connect(_on_image_change_button_pressed)
 	
 	# Conectar sinal da lista de personagens
 	if character_list:
@@ -212,7 +215,13 @@ func _update_character_ui():
 		# Selecionar a primeira expressão se existir
 		if expression_list.item_count > 0:
 			expression_list.select(0)
-			_on_expression_selected(0)
+			# Chamar diretamente a atualização da textura
+			var texture_path = current_character.get_expression_texture(expression_list.get_item_text(0))
+			if texture_path:
+				texture_rect.texture = load(texture_path)
+			else:
+				texture_rect.texture = null
+			texture_rect.queue_redraw()
 
 func _clear_character_editor():
 	if character_name_edit:
@@ -234,6 +243,17 @@ func _load_characters():
 		return
 		
 	VisualNovelSingleton.load_characters()
+
+func _on_image_change_button_pressed():
+	 # Verificar se há uma expressão selecionada
+	var selected_items = expression_list.get_selected_items()
+	if selected_items.size() == 0:
+		push_error("Selecione uma expressão primeiro!")
+		return
+	
+	expression_selected_index = selected_items[0]
+	var expression_name = expression_list.get_item_text(expression_selected_index)
+	_show_file_dialog(expression_name)
 
 func _on_add_expression_pressed():
 	print("Botão de adicionar expressão pressionado") # Debug
@@ -303,86 +323,67 @@ func _on_expression_name_canceled(dialog: AcceptDialog):
 	dialog.queue_free()
 
 func _show_file_dialog(expression_name: String):
-	print("Abrindo FileDialog para expressão:", expression_name) # Debug
+	print("Abrindo FileDialog para expressão:", expression_name)
 	
 	# Limpar FileDialog anterior se existir
-	if file_dialog:
+	if file_dialog and is_instance_valid(file_dialog):
 		file_dialog.queue_free()
-		file_dialog = null
 	
 	# Criar novo FileDialog
 	file_dialog = FileDialog.new()
+	file_dialog.title = "Selecione uma imagem para a expressão"
 	file_dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
 	file_dialog.access = FileDialog.ACCESS_RESOURCES
-	file_dialog.add_filter("*.png, *.jpg, *.jpeg, *.webp", "Imagens")
+	file_dialog.add_filter("*.png; *.jpg; *.jpeg; *.webp", "Imagens")
 	
 	# Definir diretório inicial
 	file_dialog.current_dir = "res://"
 	file_dialog.size = Vector2(800, 600)
 	
 	# Conectar sinais
-	file_dialog.file_selected.connect(_on_expression_file_selected.bind(expression_name))
-	file_dialog.canceled.connect(_on_expression_dialog_canceled)
+	if not file_dialog.file_selected.is_connected(_on_expression_file_selected):
+		file_dialog.file_selected.connect(_on_expression_file_selected.bind(expression_name))
+	if not file_dialog.canceled.is_connected(_on_expression_dialog_canceled):
+		file_dialog.canceled.connect(_on_expression_dialog_canceled)
 	
 	# Adicionar à cena e mostrar
 	add_child(file_dialog)
 	file_dialog.popup_centered()
 	
-	print("FileDialog criado e mostrado") # Debug
+	print("FileDialog criado e mostrado")
 
 func _on_expression_dialog_canceled():
-	print("FileDialog cancelado") # Debug
-	if file_dialog:
+	print("FileDialog cancelado")
+	if file_dialog and is_instance_valid(file_dialog):
 		file_dialog.queue_free()
-		file_dialog = null
+	file_dialog = null
 
-func _on_expression_file_selected(expression_name: String, path: String):
-	print("Arquivo selecionado:", path, "para expressão:", expression_name) # Debug
+func _on_expression_file_selected(path: String, expression_name: String):
+	print("Arquivo selecionado:", path, "para expressão:", expression_name)
 	
 	# Limpar FileDialog
-	if file_dialog:
+	if file_dialog and is_instance_valid(file_dialog):
 		file_dialog.queue_free()
-		file_dialog = null
+	file_dialog = null
 	
 	if not current_character:
 		return
 	
-	# Criar diretório de expressões se não existir
-	var dir = DirAccess.open("res://")
-	if not dir.dir_exists(expressions_dir):
-		dir.make_dir_recursive(expressions_dir)
-	
-	# Definir novo caminho
-	var file_extension = path.get_extension()
-	var new_path = expressions_dir + expression_name + "." + file_extension
-	
-	# Verificar se o arquivo já existe
-	if FileAccess.file_exists(new_path):
-		var timestamp = str(Time.get_unix_time_from_system()).replace(".", "_")
-		new_path = expressions_dir + expression_name + "_" + timestamp + "." + file_extension
-	
-	# Copiar arquivo
-	var error = dir.copy(path, new_path)
-	if error != OK:
-		push_error("Erro ao copiar arquivo: " + str(error))
-		return
-	
-	print("Arquivo copiado para:", new_path) # Debug
-	
-	# Adicionar ao personagem
-	current_character.add_expression(expression_name, new_path)
+	# Atualizar a expressão no personagem com o caminho original
+	current_character.add_expression(expression_name, path)
 	
 	# Atualizar UI
 	_update_character_ui()
 	
-	# Selecionar a nova expressão
+	# Selecionar a expressão novamente
 	for i in range(expression_list.item_count):
 		if expression_list.get_item_text(i) == expression_name:
 			expression_list.select(i)
+			expression_selected_index = i
 			_on_expression_selected(i)
 			break
 	
-	print("Expressão adicionada com sucesso:", expression_name) # Debug
+	print("Expressão atualizada com sucesso:", expression_name)
 	_update_current_character()
 
 func _on_remove_expression_pressed():
@@ -415,22 +416,35 @@ func _on_expression_selected(index):
 	var expression_name = expression_list.get_item_text(index)
 	var texture_path = current_character.get_expression_texture(expression_name)
 	
-	print("Expressão selecionada:", expression_name, "Caminho:", texture_path) # Debug
+	print("Expressão selecionada:", expression_name, "Caminho:", texture_path)
 	
-	if texture_path and FileAccess.file_exists(texture_path):
+	# Limpar textura atual primeiro
+	texture_rect.texture = null
+	
+	if texture_path:
+		# Carregar a textura de forma assíncrona para evitar travamentos
 		var texture = load(texture_path)
 		if texture:
-			texture_rect.texture = texture
-			print("Textura carregada com sucesso") # Debug
+			# Verificar se a textura foi carregada corretamente
+			if texture is Texture2D:
+				texture_rect.texture = texture
+				print("Textura carregada com sucesso")
+			else:
+				push_error("O arquivo carregado não é uma textura válida: " + texture_path)
+				texture_rect.texture = null
 		else:
 			push_error("Falha ao carregar textura: " + texture_path)
 			texture_rect.texture = null
-	else:
-		texture_rect.texture = null
-		if texture_path:
-			push_error("Arquivo de expressão não encontrado: " + texture_path)
 	
+	# Forçar redesenho da textura
+	texture_rect.queue_redraw()
 	_update_current_character()
+	
+	print("Estado do TextureRect após atualização:")
+	print(" - Texture: ", texture_rect.texture)
+	print(" - Visible: ", texture_rect.visible)
+	print(" - Size: ", texture_rect.size)
+	print(" - Texture size: ", texture_rect.texture.get_size() if texture_rect.texture else "N/A")
 
 func _update_current_character():
 	if not current_character:
@@ -442,4 +456,3 @@ func _update_current_character():
 	
 	# Forçar atualização do recurso
 	current_character.notify_property_list_changed()
-	

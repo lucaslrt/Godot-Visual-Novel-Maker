@@ -67,9 +67,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-current_tab = 0
+current_tab = 1
 
 [node name="ChapterEditor" type="MarginContainer" parent="TabContainer"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -119,11 +120,11 @@ layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
 item_count = 5
-item_0/text = "Novo Capítulo 1"
-item_1/text = "Novo Capítulo 6"
-item_2/text = "Novo Capítulo 2"
-item_3/text = "Novo Capítulo 5"
-item_4/text = "Novo Capítulo 4"
+item_0/text = "Novo Capítulo 5"
+item_1/text = "Novo Capítulo 4"
+item_2/text = "Novo Capítulo 1"
+item_3/text = "Novo Capítulo 6"
+item_4/text = "Novo Capítulo 2"
 script = ExtResource("2_1oe52")
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer"]
@@ -161,7 +162,6 @@ script = ExtResource("2_m406w")
 layout_mode = 2
 
 [node name="CharacterEditor" type="MarginContainer" parent="TabContainer"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -234,6 +234,15 @@ layout_mode = 2
 texture = ExtResource("3_4uf54")
 expand_mode = 1
 stretch_mode = 4
+
+[node name="Button" type="Button" parent="TabContainer/CharacterEditor/VBoxContainer/HSplitContainer/TabContainer/HBoxContainer/VBoxContainer/TextureRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+flat = true
 
 [node name="ExpressionsList" type="ItemList" parent="TabContainer/CharacterEditor/VBoxContainer/HSplitContainer/TabContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2

@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_s6b6p")
 character_id = "char_1748457188_2605_117"
-display_name = "Juanito"
-description = "Um cara bacana"
+display_name = "Alex Teixeira"
+description = "Diretor do BCB"
 expressions = {
-"default": "res://icon.svg"
+"default": "res://sprites/characters/_seed-128006062_pixel_art_A_stern_Brazilian_ma__diretor__2-removebg-preview.png"
 }

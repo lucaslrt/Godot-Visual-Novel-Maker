@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterResource" load_steps=2 format=3 uid="uid://bqnhv0e5agam1"]
+
+[ext_resource type="Script" uid="uid://3ki708dr51hn" path="res://addons/visual_novel_editor/resources/character_resource.gd" id="1_mlgrs"]
+
+[resource]
+script = ExtResource("1_mlgrs")
+character_id = "char_1748888933_89906_611"
+display_name = "Caco"
+description = "(Pessimista)
+Frases clássicas: \"Isso nunca vai acontecer...\", \"Já vi esse filme antes...\"
+Te faz perder tempo se você der ouvidos a ele.
+Ajuda a criar \"desânimo\" que influencia outros membros do grupo."
+expressions = {
+"default": "res://sprites/characters/_seed-784788267__pixel_art_A_skeptical_Brazilia__pessimista__1-removebg-preview.png"
+}

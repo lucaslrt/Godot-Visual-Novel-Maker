@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CharacterResource" load_steps=2 format=3 uid="uid://4pslbo8r5d23"]
+
+[ext_resource type="Script" uid="uid://3ki708dr51hn" path="res://addons/visual_novel_editor/resources/character_resource.gd" id="1_7ytov"]
+
+[resource]
+script = ExtResource("1_7ytov")
+character_id = "char_1748888625_03418_412"
+display_name = "Regina Valverde"
+description = "Ministra do MGI"
+expressions = {
+"default": "res://sprites/characters/_seed-760106721__pixel_art_A_composed_Brazilian__ministra__2-removebg-preview.png",
+"happy": "res://sprites/characters/pixel_art_A_composed_Brazilian__ministra__1-removebg-preview.png"
+}

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="CharacterResource" load_steps=2 format=3 uid="uid://wj3nst1mbmnc"]
+
+[ext_resource type="Script" uid="uid://3ki708dr51hn" path="res://addons/visual_novel_editor/resources/character_resource.gd" id="1_4cn0u"]
+
+[resource]
+script = ExtResource("1_4cn0u")
+character_id = "char_1748889044_41557_078"
+display_name = "Evandro Vidal"
+description = "Presidente do BCB"
+expressions = {
+"default": "res://sprites/characters/_seed-895624010__pixel_art_A_composed_white_man__presidente__1-removebg-preview.png"
+}
