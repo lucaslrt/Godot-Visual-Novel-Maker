@@ -17,7 +17,7 @@ blocks = {
 "next_block_id": "dialogue_1748975771_82898",
 "text": "Opção 2"
 }],
-"graph_position": Vector2(2240, 120),
+"graph_position": Vector2(2000, 260),
 "id": "choice_1748975752_49692",
 "type": "choice"
 },
@@ -34,10 +34,10 @@ blocks = {
 "character_position": Vector2(0.5, 1),
 "text": "Texto 2"
 }],
-"graph_position": Vector2(1020, 340),
+"graph_position": Vector2(120, 200),
 "id": "dialogue_1748973322_61219",
 "music": "",
-"next_block_id": "choice_1748975752_49692",
+"next_block_id": "dialogue_1748982635_68864",
 "type": "dialogue"
 },
 "dialogue_1748975769_32776": {
@@ -73,13 +73,28 @@ blocks = {
 "next_block_id": "end_1748912454_13728",
 "type": "dialogue"
 },
+"dialogue_1748982635_68864": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Isadora",
+"character_position": Vector2(0.5, 1),
+"text": "hauhao;lsdklfjal;ksjdf;lak"
+}],
+"graph_position": Vector2(1020, 240),
+"id": "dialogue_1748982635_68864",
+"music": "",
+"next_block_id": "choice_1748975752_49692",
+"type": "dialogue"
+},
 "end_1748912454_13728": {
 "graph_position": Vector2(4540, 280),
 "id": "end_1748912454_13728",
 "type": "end"
 },
 "start_1748912454_13728": {
-"graph_position": Vector2(100, 300),
+"graph_position": Vector2(-640, 300),
+"id": "start_1748912454_13728",
 "next_block_id": "dialogue_1748973322_61219",
 "type": "start"
 }

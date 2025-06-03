@@ -228,10 +228,15 @@ func select_choice(choice_index):
 		
 	emit_signal("choice_selected", choice_index)
 	
+	 # Resetar o índice de diálogo ao mudar de bloco
+	current_dialogue_index = 0
+	
 	# Atualiza o bloco atual e emite o sinal de avanço
 	current_block_id = block.choices[choice_index].next_block_id
-	emit_signal("dialogue_advanced", current_block_id)  # Adicionado este sinal
+
 	_process_current_block()
+	
+	emit_signal("dialogue_advanced", current_block_id, current_dialogue_index)
 
 func start_next_chapter():
 	var chapter_id_to_use = ""

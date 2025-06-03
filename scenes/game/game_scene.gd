@@ -186,6 +186,7 @@ func _show_dialogue(block_data: Dictionary):
 	var dialogue_content = dialogue.get("text", "")
 	if dialogue_text:
 		dialogue_text.text = dialogue_content
+		print("Texto: ", dialogue_content)
 	
 	# Atualizar sprite do personagem (agora usando dados do diálogo)
 	_update_character_sprite(dialogue)
