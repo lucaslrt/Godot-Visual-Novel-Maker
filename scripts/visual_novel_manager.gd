@@ -12,6 +12,7 @@ signal choice_selected(choice_index)
 var current_chapter_resource = null
 # O bloco de diálogo atual
 var current_block_id = ""
+var current_dialogue_index: int = 0
 # Referência para o nó que exibe os personagens e diálogos
 var dialogue_display = null
 # Variável para armazenar o último capítulo concluído
@@ -168,14 +169,32 @@ func advance_dialogue():
 		end_dialogue()
 		return
 		
-	if current_block.has("next_block_id") and not current_block.next_block_id.is_empty():
-		current_block_id = current_block.next_block_id
-		emit_signal("dialogue_advanced", current_block_id)
-		_process_current_block()
+	# Para blocos de diálogo, avance para o próximo diálogo ou próximo bloco
+	if current_block.type == "dialogue":
+		current_dialogue_index += 1
+		
+		# Verificar se ainda há diálogos neste bloco
+		if current_dialogue_index < current_block["dialogues"].size():
+			emit_signal("dialogue_advanced", current_block_id, current_dialogue_index)
+		else:
+			# Próximo bloco
+			current_dialogue_index = 0
+			if current_block.has("next_block_id") and not current_block.next_block_id.is_empty():
+				current_block_id = current_block.next_block_id
+				emit_signal("dialogue_advanced", current_block_id, current_dialogue_index)
+				_process_current_block()
+			else:
+				end_dialogue()
 	else:
-		end_dialogue()
+		# Comportamento original para outros tipos
+		if current_block.has("next_block_id") and not current_block.next_block_id.is_empty():
+			current_block_id = current_block.next_block_id
+			emit_signal("dialogue_advanced", current_block_id, current_dialogue_index)
+			_process_current_block()
+		else:
+			end_dialogue()
 
-# Método para processar o bloco atual
+# Modifique _process_current_block para resetar o índice
 func _process_current_block():
 	if current_chapter_resource == null:
 		return
@@ -186,10 +205,12 @@ func _process_current_block():
 		end_dialogue()
 		return
 		
+	# Resetar índice de diálogo ao entrar em novo bloco
+	current_dialogue_index = 0
+	
 	match block.type:
 		"dialogue":
-			# A UI será atualizada via sinal dialogue_advanced
-			pass
+			pass  # A UI será atualizada via sinal dialogue_advanced
 		"choice":
 			emit_signal("choice_presented", block.choices)
 		_:
@@ -249,10 +270,22 @@ func start_next_chapter():
 	return true
 
 # Método para iniciar um capítulo específico pelo ID
-func start_chapter_by_id(chapter_id: String):
-	var chapter = VisualNovelSingleton.chapters.get(chapter_id)
-	if not chapter:
-		print("Capítulo não encontrado: ", chapter_id)
+func start_chapter_by_id(chapter_id: String) -> bool:
+	# Verificar se o capítulo existe
+	if not VisualNovelSingleton.chapters.has(chapter_id):
+		push_error("Capítulo não encontrado: ", chapter_id)
+		return false
+	
+	var chapter = VisualNovelSingleton.chapters[chapter_id]
+	
+	# Verificar se tem bloco inicial
+	if chapter.start_block_id.is_empty():
+		push_error("Capítulo não tem bloco inicial definido: ", chapter_id)
+		return false
+	
+	# Verificar se o bloco inicial existe
+	if not chapter.blocks.has(chapter.start_block_id):
+		push_error("Bloco inicial não encontrado: ", chapter.start_block_id)
 		return false
 	
 	start_chapter(chapter)

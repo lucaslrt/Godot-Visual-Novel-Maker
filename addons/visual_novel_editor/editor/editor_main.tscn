@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://do72ryj7i8dhp" path="res://addons/visual_novel_editor/editor/chapter_editor.gd" id="1_hd7xp"]
 [ext_resource type="Script" uid="uid://xrapyt3nqrmk" path="res://addons/visual_novel_editor/editor/chapter_item_list.gd" id="2_1oe52"]
-[ext_resource type="Script" uid="uid://utsdswg7dxbq" path="res://addons/visual_novel_editor/editor/graph_edit.gd" id="2_m406w"]
+[ext_resource type="Script" uid="uid://utsdswg7dxbq" path="res://addons/visual_novel_editor/editor/graph_edit/graph_edit.gd" id="2_m406w"]
 [ext_resource type="Texture2D" uid="uid://dqma3hdfebua2" path="res://icon.svg" id="3_4uf54"]
 [ext_resource type="Script" uid="uid://d1jvjca74fqrd" path="res://addons/visual_novel_editor/editor/character_editor.gd" id="3_4uoua"]
 
@@ -119,12 +119,8 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 5
-item_0/text = "Novo Capítulo 5"
-item_1/text = "Novo Capítulo 4"
-item_2/text = "Novo Capítulo 1"
-item_3/text = "Novo Capítulo 6"
-item_4/text = "Novo Capítulo 2"
+item_count = 1
+item_0/text = "Novo Capítulo 1"
 script = ExtResource("2_1oe52")
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer"]

@@ -65,48 +65,27 @@ func _setup_initial_ui():
 		text_canvas.custom_minimum_size = Vector2(800, 200)
 
 func _start_first_chapter():
-	# Verificar se há capítulos disponíveis
-	if not VisualNovelSingleton:
-		push_error("VisualNovelSingleton não encontrado!")
-		return
-		
 	VisualNovelSingleton.load_all_data()
 	
-	# Se não há capítulos, criar um de exemplo
-	#if VisualNovelSingleton.chapters.is_empty():
-		#_create_example_chapter()
-	
-	# Pegar o primeiro capítulo seguindo a ordem definida em chapter_order
 	var first_chapter = null
 	var chapter_order = VisualNovelSingleton.get_chapter_order()
 	
-	if chapter_order.is_empty():
-		print("Nenhuma ordem de capítulos definida, usando o primeiro disponível")
-		# Se não há ordem definida, pegar qualquer um
-		for chapter_id in VisualNovelSingleton.chapters:
-			first_chapter = VisualNovelSingleton.chapters[chapter_id]
-			break
-	else:
-		# Usar a ordem definida em chapter_order
+	# Verificar se há ordem definida
+	if chapter_order.size() > 0:
 		for chapter_id in chapter_order:
 			if VisualNovelSingleton.chapters.has(chapter_id):
 				first_chapter = VisualNovelSingleton.chapters[chapter_id]
-				print("Iniciando primeiro capítulo da ordem: ", chapter_id)
-				break
-		
-		# Se o primeiro da ordem não foi encontrado, tentar outros
-		if not first_chapter:
-			print("Primeiro capítulo da ordem não encontrado, procurando alternativa...")
-			for chapter_id in VisualNovelSingleton.chapters:
-				first_chapter = VisualNovelSingleton.chapters[chapter_id]
-				print("Usando capítulo alternativo: ", chapter_id)
 				break
 	
+	# Se não encontrou pela ordem, pegar o primeiro disponível
+	if not first_chapter and VisualNovelSingleton.chapters.size() > 0:
+		first_chapter = VisualNovelSingleton.chapters.values()[0]
+	
 	if first_chapter:
-		print("Capítulo selecionado: ", first_chapter.chapter_name)
+		print("Iniciando capítulo: ", first_chapter.chapter_name)
 		visual_novel_manager.start_chapter(first_chapter)
 	else:
-		print("Nenhum capítulo encontrado para iniciar!")
+		push_error("Nenhum capítulo encontrado para iniciar!")
 
 # ========== CALLBACKS DOS SINAIS DO VISUAL NOVEL MANAGER ==========
 func _on_dialogue_started(chapter_name: String, block_id: String):
@@ -115,8 +94,8 @@ func _on_dialogue_started(chapter_name: String, block_id: String):
 	dialogue_container.visible = true
 	_update_dialogue_display()
 
-func _on_dialogue_advanced(block_id: String):
-	print("Diálogo avançado para: ", block_id)
+func _on_dialogue_advanced(block_id: String, dialogue_index: int):
+	print("Diálogo avançado para: ", block_id, " diálogo ", dialogue_index)
 	_update_dialogue_display()
 
 func _on_dialogue_ended(chapter_name: String):
@@ -185,29 +164,38 @@ func _update_dialogue_display():
 			visual_novel_manager.end_dialogue()
 
 func _show_dialogue(block_data: Dictionary):
-	# Ocultar escolhas se estiverem visíveis
+	# Ocultar escolhas
 	choices_panel.visible = false
 	
+	# Verificar se temos um índice de diálogo válido
+	if visual_novel_manager.current_dialogue_index < 0 or visual_novel_manager.current_dialogue_index >= block_data.get("dialogues", []).size():
+		push_error("Índice de diálogo inválido: ", visual_novel_manager.current_dialogue_index)
+		visual_novel_manager.advance_dialogue()
+		return
+	
+	# Obter diálogo atual
+	var dialogue = block_data["dialogues"][visual_novel_manager.current_dialogue_index]
+	
 	# Mostrar nome do personagem
-	var character_name = block_data.get("character_name", "")
+	var character_name = dialogue.get("character_name", "")
 	if character_name_label:
 		character_name_label.text = character_name
 		character_name_label.visible = not character_name.is_empty()
 	
 	# Mostrar texto do diálogo
-	var dialogue_content = block_data.get("text", "")
+	var dialogue_content = dialogue.get("text", "")
 	if dialogue_text:
 		dialogue_text.text = dialogue_content
 	
-	# Atualizar sprite do personagem
-	_update_character_sprite(block_data)
+	# Atualizar sprite do personagem (agora usando dados do diálogo)
+	_update_character_sprite(dialogue)
 	
 	# Mostrar botão de continuar
 	continue_button.visible = true
 
-func _update_character_sprite(block_data: Dictionary):
-	var character_name = block_data.get("character_name", "")
-	var expression = block_data.get("character_expression", "normal")
+func _update_character_sprite(dialogue_data: Dictionary):
+	var character_name = dialogue_data.get("character_name", "")
+	var expression = dialogue_data.get("character_expression", "normal")
 	
 	if character_name.is_empty():
 		_clear_character_display()
@@ -245,7 +233,7 @@ func _update_character_sprite(block_data: Dictionary):
 			sprite_node.visible = true
 			
 			# Posicionar personagem
-			var position = block_data.get("character_position", Vector2(0.5, 1.0))
+			var position = dialogue_data.get("character_position", Vector2(0.5, 1.0))
 			_position_character(sprite_node, position)
 
 func _position_character(sprite_node: TextureRect, position: Vector2):

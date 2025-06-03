@@ -106,10 +106,16 @@ func _on_add_dialogue_pressed():
 	var block_id = "dialogue_" + timestamp
 	var block_data = {
 		"type": "dialogue",
-		"character_name": "Personagem",
-		"character_expression": "default",
-		"character_position": Vector2(0.5, 1.0),
-		"text": "Digite o texto aqui...",
+		"dialogues": [
+			{
+				"character_name": "Personagem",
+				"character_expression": "default",
+				"character_position": Vector2(0.5, 1.0),
+				"text": "Digite o texto aqui..."
+			}
+		],
+		"background": "",
+		"music": "",
 		"next_block_id": "",
 		"graph_position": _get_new_block_position()
 	}
@@ -228,29 +234,26 @@ func _on_disconnection_request(from_node, from_port, to_node, to_port):
 	if not current_chapter:
 		return
 	
-	# Verificar se os nós existem no capítulo
-	if not current_chapter.blocks.has(from_node):
+	var from_block = current_chapter.blocks.get(from_node)
+	if not from_block:
 		push_error("Tentativa de desconectar bloco não existente!")
 		return
 	
-	var from_block = current_chapter.blocks[from_node]
-	
-	# Atualizar os dados do bloco
 	match from_block["type"]:
 		"start", "dialogue":
 			from_block["next_block_id"] = ""
 			print("Desconectado: ", from_node)
 		
 		"choice":
-			if from_port < from_block.get("choices", []).size():
-				from_block["choices"][from_port]["next_block_id"] = ""
-				print("Desconectado choice: ", from_node, " porta ", from_port)
+			# Corrigir o índice das escolhas
+			if from_port > 0:  # As portas de escolha começam em 1
+				var choice_index = from_port - 1
+				if choice_index < from_block.get("choices", []).size():
+					from_block["choices"][choice_index]["next_block_id"] = ""
+					print("Desconectado choice: ", from_node, " porta ", from_port)
 	
-	# Forçar atualização imediata do recurso
 	disconnect_node(from_node, from_port, to_node, to_port)
 	current_chapter.notify_property_list_changed()
-	ResourceSaver.save(current_chapter, current_chapter.resource_path)
-	
 
 func _on_connection_to_empty(from_node, from_port, release_position):
 	if not current_chapter:
@@ -274,52 +277,34 @@ func _update_chapter_editor(chapter: ChapterResource):
 	if not is_instance_valid(self) or not chapter:
 		return
 	
-	print("=== INICIANDO ATUALIZAÇÃO DO EDITOR ===")
-	print("Capítulo: ", chapter.chapter_name)
-	print("Blocos a serem carregados: ", chapter.blocks.keys())
-	
 	self.current_chapter = chapter
 	emit_signal("change_chapter_ui", current_chapter.chapter_name, current_chapter.chapter_description)
 	
-	# Limpar grafo existente
 	_clear_graph()
 	await get_tree().process_frame
 	
-	# Adicionar blocos preservando as posições salvas
 	for block_id in current_chapter.blocks:
 		var block_data = current_chapter.blocks[block_id].duplicate(true)
 		var string_id = str(block_id)
 		
-		# DEBUG: Verificar posição antes de adicionar
-		print("Bloco ", string_id, " - posição salva: ", block_data.get("graph_position", "NÃO ENCONTRADA"))
-		print("Tipo da posição: ", typeof(block_data.get("graph_position", null)))
-		
-		# Corrigir posição se vier como Dictionary (problema de serialização)
+		# Corrigir conversão de posição
 		if block_data.has("graph_position"):
 			var pos = block_data["graph_position"]
 			if typeof(pos) == TYPE_DICTIONARY:
-				if pos.has("x") and pos.has("y"):
+				# Converter Dictionary para Vector2
+				if "x" in pos and "y" in pos:
 					block_data["graph_position"] = Vector2(pos["x"], pos["y"])
-					print("Convertendo posição de Dictionary para Vector2: ", block_data["graph_position"])
 				else:
-					print("Dictionary de posição inválido, usando nova posição")
 					block_data["graph_position"] = _get_new_block_position()
 			elif typeof(pos) != TYPE_VECTOR2:
-				print("Tipo de posição inválido (", typeof(pos), "), usando nova posição")
 				block_data["graph_position"] = _get_new_block_position()
 		else:
-			print("Posição não encontrada, usando nova posição para bloco ", string_id)
 			block_data["graph_position"] = _get_new_block_position()
 		
 		_add_block_to_graph(string_id, block_data)
 	
 	await get_tree().process_frame
-	
-	print("Nós após carregamento: ", get_children().filter(func(c): return c is GraphNode).map(func(n): return n.name))
-	
-	# Restaurar conexões
 	_update_connections()
-	print("=== ATUALIZAÇÃO COMPLETA ===")
 
 func _update_connections() -> void:
 	if not current_chapter:

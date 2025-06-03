@@ -1,0 +1,26 @@
+---
+title: Novo Capítulo 1
+id: 0a42ec92-0c6e-404e-b9c4-da56a57a1d4e
+start: start_1748912454_13728
+description: Descrição do capítulo
+---
+
+:: end_1748912454_13728
+(Fim do capítulo)
+
+:: start_1748912454_13728
+-> Iniciar |> dialogue_1748973322_61219
+
+:: dialogue_1748973322_61219
+-> Continuar |> choice_1748975752_49692
+
+:: choice_1748975752_49692
+-> Opção 1 |> dialogue_1748975769_32776
+-> Opção 2 |> dialogue_1748975771_82898
+
+:: dialogue_1748975769_32776
+-> Continuar |> end_1748912454_13728
+
+:: dialogue_1748975771_82898
+-> Continuar |> end_1748912454_13728
+

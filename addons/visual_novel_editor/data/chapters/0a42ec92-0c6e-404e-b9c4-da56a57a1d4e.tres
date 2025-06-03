@@ -1,0 +1,86 @@
+[gd_resource type="Resource" script_class="ChapterResource" load_steps=2 format=3 uid="uid://diembgqjtgui"]
+
+[ext_resource type="Script" uid="uid://boy8tnf7he8ey" path="res://addons/visual_novel_editor/resources/chapter_resource.gd" id="1_d5xbu"]
+
+[resource]
+script = ExtResource("1_d5xbu")
+chapter_id = "0a42ec92-0c6e-404e-b9c4-da56a57a1d4e"
+chapter_name = "Novo Capítulo 1"
+chapter_description = "Descrição do capítulo"
+start_block_id = "start_1748912454_13728"
+blocks = {
+"choice_1748975752_49692": {
+"choices": [{
+"next_block_id": "dialogue_1748975769_32776",
+"text": "Opção 1"
+}, {
+"next_block_id": "dialogue_1748975771_82898",
+"text": "Opção 2"
+}],
+"graph_position": Vector2(2240, 120),
+"id": "choice_1748975752_49692",
+"type": "choice"
+},
+"dialogue_1748973322_61219": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Personagem",
+"character_position": Vector2(0.5, 1),
+"text": "Texto exemplo"
+}, {
+"character_expression": "default",
+"character_name": "Caco",
+"character_position": Vector2(0.5, 1),
+"text": "Texto 2"
+}],
+"graph_position": Vector2(1020, 340),
+"id": "dialogue_1748973322_61219",
+"music": "",
+"next_block_id": "choice_1748975752_49692",
+"type": "dialogue"
+},
+"dialogue_1748975769_32776": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Márcia",
+"character_position": Vector2(0.5, 1),
+"text": "Texto 3"
+}],
+"graph_position": Vector2(3220, -200),
+"id": "dialogue_1748975769_32776",
+"music": "",
+"next_block_id": "end_1748912454_13728",
+"type": "dialogue"
+},
+"dialogue_1748975771_82898": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Alex Teixeira",
+"character_position": Vector2(0.5, 1),
+"text": "Texto 4"
+}, {
+"character_expression": "default",
+"character_name": "Lila",
+"character_position": Vector2(0.5, 1),
+"text": "Texto 5"
+}],
+"graph_position": Vector2(3140, 580),
+"id": "dialogue_1748975771_82898",
+"music": "",
+"next_block_id": "end_1748912454_13728",
+"type": "dialogue"
+},
+"end_1748912454_13728": {
+"graph_position": Vector2(4540, 280),
+"id": "end_1748912454_13728",
+"type": "end"
+},
+"start_1748912454_13728": {
+"graph_position": Vector2(100, 300),
+"next_block_id": "dialogue_1748973322_61219",
+"type": "start"
+}
+}
