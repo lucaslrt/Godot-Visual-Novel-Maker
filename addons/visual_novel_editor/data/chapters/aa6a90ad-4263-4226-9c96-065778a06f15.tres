@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="ChapterResource" load_steps=2 format=3 uid="uid://dgf3bbuf85apn"]
+
+[ext_resource type="Script" uid="uid://boy8tnf7he8ey" path="res://addons/visual_novel_editor/resources/chapter_resource.gd" id="1_b83hs"]
+
+[resource]
+script = ExtResource("1_b83hs")
+chapter_id = "aa6a90ad-4263-4226-9c96-065778a06f15"
+chapter_name = "Novo Capítulo 2"
+chapter_description = "Descrição do capítulo"
+start_block_id = "start_1749056720_00769"
+blocks = {
+"dialogue_1749056727_48451": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Márcia",
+"character_position": Vector2(0.5, 1),
+"text": "Digite o texto aqui..."
+}],
+"graph_position": Vector2(80, 560),
+"id": "dialogue_1749056727_48451",
+"music": "",
+"next_block_id": "dialogue_1749056733_05591",
+"type": "dialogue"
+},
+"dialogue_1749056733_05591": {
+"background": "",
+"dialogues": [{
+"character_expression": "default",
+"character_name": "Isadora",
+"character_position": Vector2(0.5, 1),
+"text": "Digite o texto aqui..."
+}],
+"graph_position": Vector2(1140, 540),
+"id": "dialogue_1749056733_05591",
+"music": "",
+"next_block_id": "end_1749056720_00769",
+"type": "dialogue"
+},
+"end_1749056720_00769": {
+"graph_position": Vector2(2240, 460),
+"id": "end_1749056720_00769",
+"type": "end"
+},
+"start_1749056720_00769": {
+"graph_position": Vector2(-920, 600),
+"id": "start_1749056720_00769",
+"next_block_id": "dialogue_1749056727_48451",
+"type": "start"
+}
+}

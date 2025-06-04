@@ -1,0 +1,30 @@
+flowchart TD
+    %%% Título: %s
+    %%% ID: %s
+    %%% Início: %s
+
+    choice_1748975752_49692{"Escolha
+      1. Opção 1
+      2. Opção 2"}
+    dialogue_1748973322_61219["Diálogo
+      - Rato:default: Texto exemplo
+      - Caco:default: Texto 2
+      - Regina Valverde:default: Regina"]
+    dialogue_1748975769_32776["Diálogo
+      - Márcia:default: Texto 3"]
+    dialogue_1748975771_82898["Diálogo
+      - Alex Teixeira:default: Texto 4
+      - Lila:default: Texto 5"]
+    dialogue_1748982635_68864["Diálogo
+      - Regina Valverde:happy: hauhao;lsdklfjal;ksjdf;lak"]
+    end_1748912454_13728(("Fim"))
+    start_1748912454_13728(("Início"))
+
+    start_1748912454_13728 --> dialogue_1748973322_61219
+    choice_1748975752_49692 -->|1| dialogue_1748975769_32776
+    choice_1748975752_49692 -->|2| dialogue_1748975771_82898
+    dialogue_1748973322_61219 --> dialogue_1748982635_68864
+    dialogue_1748975769_32776 --> end_1748912454_13728
+    dialogue_1748975771_82898 --> end_1748912454_13728
+    dialogue_1748982635_68864 --> choice_1748975752_49692
+    start_1748912454_13728 --> dialogue_1748973322_61219

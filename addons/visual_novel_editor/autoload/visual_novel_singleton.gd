@@ -72,39 +72,162 @@ func load_all_data():
 	print("Dados carregados. Capítulos: ", chapters.size(), " Personagens: ", characters.size())
 
 func save_chapters():
-	print("Salvando capítulos no formato VNScript...")
+	print("Salvando capítulos no formato Flowchart...")
 	
-	# Cria a pasta se ela não existir
+	# Cria a pasta se não existir
 	var dir = DirAccess.open("res://")
-	if not dir:
-		push_error("Não foi possível acessar o diretório res://")
-		return
-		
-	if not dir.dir_exists("res://addons/visual_novel_editor/data/scripts"):
-		var error = dir.make_dir_recursive("res://addons/visual_novel_editor/data/scripts")
-		if error != OK:
-			push_error("Erro ao criar diretório: " + str(error))
-			return
+	if not dir.dir_exists("res://addons/visual_novel_editor/data/flowcharts"):
+		dir.make_dir_recursive("res://addons/visual_novel_editor/data/flowcharts")
 	
-	# Salvar cada capítulo em um arquivo .vnscript separado
 	for chapter_id in chapters:
 		var chapter = chapters[chapter_id]
 		if not chapter:
 			continue
 		
-		var script_content = _convert_chapter_to_script(chapter)
-		var file_path = "res://addons/visual_novel_editor/data/scripts/%s.vnscript" % chapter_id
+		var flowchart_content = _convert_chapter_to_flowchart(chapter)
+		var file_path = "res://addons/visual_novel_editor/data/flowcharts/%s.flowchart" % chapter_id
 		
 		var file = FileAccess.open(file_path, FileAccess.WRITE)
-		if not file:
-			push_error("Erro ao abrir arquivo para escrita: " + file_path)
-			continue
-		
-		file.store_string(script_content)
+		file.store_string(flowchart_content)
 		file.close()
-		print("Capítulo salvo: ", file_path)
 	
-	print("Todos os capítulos foram salvos no formato VNScript!")
+	print("Capítulos salvos no formato Flowchart!")
+
+func _convert_chapter_to_flowchart(chapter: ChapterResource) -> String:
+	var flowchart = "flowchart TD\n"
+	var node_definitions = []
+	var connections = []
+	
+	# Metadados
+	flowchart += "    %%% Título: %s\n" % chapter.chapter_name
+	flowchart += "    %%% ID: %s\n" % chapter.chapter_id
+	flowchart += "    %%% Início: %s\n\n" % chapter.start_block_id
+	
+	# Processar blocos
+	for block_id in chapter.blocks:
+		var block = chapter.blocks[block_id]
+		var node_def = ""
+		
+		match block.get("type"):
+			"start":
+				node_def = '    %s(("Início"))' % block_id
+				if block.has("next_block_id") and block.next_block_id:
+					connections.append('    %s --> %s' % [block_id, block.next_block_id])
+			
+			"end":
+				node_def = '    %s(("Fim"))' % block_id
+			
+			"dialogue", "text":
+				var content = "Diálogo\n"
+				if block.has("dialogues"):
+					for dialogue in block["dialogues"]:
+						var line = "      - %s" % dialogue.get("character_name", "???")
+						if dialogue.get("character_expression", ""):
+							line += ":%s" % dialogue.character_expression
+						line += ": %s" % dialogue.get("text", "")
+						content += line + "\n"
+				else:
+					content += "      " + block.get("text", "").replace("\n", "\n      ")
+				
+				node_def = '    %s["%s"]' % [block_id, content.strip_edges()]
+			
+			"choice":
+				var content = "Escolha\n"
+				if block.has("choices"):
+					for i in range(block.choices.size()):
+						content += "      %d. %s\n" % [i+1, block.choices[i].get("text", "")]
+				
+				node_def = '    %s{"%s"}' % [block_id, content.strip_edges()]
+		
+		node_definitions.append(node_def)
+	
+	# Adicionar conexões
+	for block_id in chapter.blocks:
+		var block = chapter.blocks[block_id]
+		
+		if block.get("type") == "choice" and block.has("choices"):
+			for i in range(block.choices.size()):
+				var choice = block.choices[i]
+				if choice.get("next_block_id", ""):
+					connections.append('    %s -->|%d| %s' % [block_id, i+1, choice.next_block_id])
+		elif block.has("next_block_id") and block.next_block_id:
+			connections.append('    %s --> %s' % [block_id, block.next_block_id])
+	
+	# Combinar tudo
+	flowchart += "\n".join(node_definitions) + "\n\n"
+	flowchart += "\n".join(connections)
+	
+	return flowchart
+
+func import_flowchart(file_path: String):
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		push_error("Falha ao abrir arquivo: " + file_path)
+		return
+	
+	var content = file.get_as_text()
+	var parsed = FlowchartParser.parse_flowchart(content)
+	
+	var chapter = ChapterResource.new()
+	chapter.chapter_id = parsed.id
+	chapter.chapter_name = parsed.title
+	chapter.start_block_id = parsed.start_block
+	
+	for block_id in parsed.blocks:
+		var block_data = parsed.blocks[block_id]
+		var block = {"type": block_data.type}
+		
+		match block_data.type:
+			"dialogue":
+				block["dialogues"] = []
+				for dialogue in block_data.content.split("\\n"):
+					if dialogue.begins_with("-"):
+						var parts = dialogue.substr(1).split(":", false, 2)
+						var char_name = ""
+						var expression = ""
+						var text = ""
+						
+						if parts.size() == 2:
+							char_name = parts[0].strip_edges()
+							text = parts[1].strip_edges()
+						elif parts.size() == 3:
+							char_name = parts[0].strip_edges()
+							expression = parts[1].strip_edges()
+							text = parts[2].strip_edges()
+						
+						if char_name != "":
+							block["dialogues"].append({
+								"character_name": char_name,
+								"character_expression": expression,
+								"text": text
+							})
+			
+			"choice":
+				block["choices"] = []
+				for choice in block_data.choices:
+					block["choices"].append({
+						"text": choice.text,
+						"next_block_id": choice.next
+					})
+		
+		chapter.blocks[block_id] = block
+	
+	# Adicionar conexões
+	for connection in parsed.connections:
+		var from_block = chapter.blocks.get(connection.from)
+		if from_block:
+			match from_block["type"]:
+				"dialogue", "start":
+					from_block["next_block_id"] = connection.to
+				
+				"choice":
+					for choice in from_block.get("choices", []):
+						if choice["text"] == connection.label:
+							choice["next_block_id"] = connection.to
+	
+	chapters[chapter.chapter_id] = chapter
+	save_chapters()
+	print("Flowchart importado com sucesso!")
 
 func _load_chapter_order():
 	# Carregar chapter_order do .tres
@@ -153,54 +276,6 @@ func _save_chapter_order():
 		push_error("Erro ao salvar chapter_order.tres: " + str(error))
 	else:
 		print("ChapterOrder salvo como .tres")
-
-func _convert_chapter_to_script(chapter: ChapterResource) -> String:
-	var script = "---\n"
-	script += "title: %s\n" % chapter.chapter_name
-	script += "id: %s\n" % chapter.chapter_id
-	script += "start: %s\n" % chapter.start_block_id
-	
-	# Adicionar descrição se existir
-	if not chapter.chapter_description.is_empty():
-		script += "description: %s\n" % chapter.chapter_description
-	
-	script += "---\n\n"
-	
-	# Processar cada bloco
-	for block_id in chapter.blocks:
-		var block = chapter.blocks[block_id]
-		
-		# Cabeçalho do bloco
-		script += ":: %s\n" % block_id
-		
-		# Processar conteúdo baseado no tipo
-		match block.get("type", "text"):
-			"text", "dialogue":
-				if block.has("text"):
-					script += block.text + "\n"
-				
-				if block.has("next_block_id") and not block.next_block_id.is_empty():
-					script += "-> Continuar |> %s\n" % block.next_block_id
-			
-			"choice":
-				if block.has("choices"):
-					for choice in block.choices:
-						var next = choice.get("next_block_id", "")
-						script += "-> %s" % choice.text
-						if not next.is_empty():
-							script += " |> %s" % next
-						script += "\n"
-			
-			"start":
-				if block.has("next_block_id") and not block.next_block_id.is_empty():
-					script += "-> Iniciar |> %s\n" % block.next_block_id
-			
-			"end":
-				script += "(Fim do capítulo)\n"
-		
-		script += "\n"  # Espaço entre blocos
-	
-	return script
 
 func _serialize_blocks(blocks):
 	var serialized = {}

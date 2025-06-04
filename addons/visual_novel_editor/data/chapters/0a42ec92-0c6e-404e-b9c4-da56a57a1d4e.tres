@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_d5xbu")
 chapter_id = "0a42ec92-0c6e-404e-b9c4-da56a57a1d4e"
-chapter_name = "Novo Capítulo 1"
+chapter_name = "Novo Capítulo 0"
 chapter_description = "Descrição do capítulo"
 start_block_id = "start_1748912454_13728"
 blocks = {

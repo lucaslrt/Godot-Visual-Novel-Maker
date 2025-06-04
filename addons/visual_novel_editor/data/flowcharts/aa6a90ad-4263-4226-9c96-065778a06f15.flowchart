@@ -1,0 +1,16 @@
+flowchart TD
+    %%% Título: %s
+    %%% ID: %s
+    %%% Início: %s
+
+    start_1749056720_00769(("Início"))
+    end_1749056720_00769(("Fim"))
+    dialogue_1749056727_48451["Diálogo
+      - Márcia:default: Digite o texto aqui..."]
+    dialogue_1749056733_05591["Diálogo
+      - Isadora:default: Digite o texto aqui..."]
+
+    start_1749056720_00769 --> dialogue_1749056727_48451
+    start_1749056720_00769 --> dialogue_1749056727_48451
+    dialogue_1749056727_48451 --> dialogue_1749056733_05591
+    dialogue_1749056733_05591 --> end_1749056720_00769

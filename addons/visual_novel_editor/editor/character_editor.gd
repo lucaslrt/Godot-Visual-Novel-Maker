@@ -358,6 +358,7 @@ func _on_expression_dialog_canceled():
 		file_dialog.queue_free()
 	file_dialog = null
 
+# dialogue_block_type.gd
 func _on_expression_file_selected(path: String, expression_name: String):
 	print("Arquivo selecionado:", path, "para expressão:", expression_name)
 	
@@ -369,7 +370,7 @@ func _on_expression_file_selected(path: String, expression_name: String):
 	if not current_character:
 		return
 	
-	# Atualizar a expressão no personagem com o caminho original
+	# Armazenar o caminho original diretamente
 	current_character.add_expression(expression_name, path)
 	
 	# Atualizar UI
@@ -399,11 +400,7 @@ func _on_remove_expression_pressed():
 			push_error("Não é possível remover a expressão padrão!")
 			return
 		
-		# Remover arquivo de expressão
-		var texture_path = current_character.get_expression_texture(expression_name)
-		if texture_path and FileAccess.file_exists(texture_path):
-			DirAccess.remove_absolute(texture_path)
-		
+		# Remover apenas a referência, não o arquivo original
 		current_character.remove_expression(expression_name)
 		_update_character_ui()
 	
