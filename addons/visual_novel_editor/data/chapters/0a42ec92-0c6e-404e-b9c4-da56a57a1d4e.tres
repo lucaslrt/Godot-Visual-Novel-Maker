@@ -25,7 +25,7 @@ blocks = {
 "background": "",
 "dialogues": [{
 "character_expression": "default",
-"character_name": "Personagem",
+"character_name": "Rato",
 "character_position": Vector2(0.5, 1),
 "text": "Texto exemplo"
 }, {
@@ -33,6 +33,11 @@ blocks = {
 "character_name": "Caco",
 "character_position": Vector2(0.5, 1),
 "text": "Texto 2"
+}, {
+"character_expression": "default",
+"character_name": "Regina Valverde",
+"character_position": Vector2(0.5, 1),
+"text": "Regina"
 }],
 "graph_position": Vector2(120, 200),
 "id": "dialogue_1748973322_61219",

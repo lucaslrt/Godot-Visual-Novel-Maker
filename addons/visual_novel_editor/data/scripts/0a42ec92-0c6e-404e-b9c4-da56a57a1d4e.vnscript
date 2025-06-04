@@ -18,12 +18,12 @@ description: Descrição do capítulo
 :: dialogue_1748975771_82898
 -> Continuar |> end_1748912454_13728
 
+:: dialogue_1748982635_68864
+-> Continuar |> choice_1748975752_49692
+
 :: end_1748912454_13728
 (Fim do capítulo)
 
 :: start_1748912454_13728
 -> Iniciar |> dialogue_1748973322_61219
-
-:: dialogue_1748982635_68864
--> Continuar |> choice_1748975752_49692
 
