@@ -39,7 +39,7 @@ blocks = {
 "character_position": Vector2(0.5, 1),
 "text": "Regina"
 }],
-"graph_position": Vector2(120, 200),
+"graph_position": Vector2(140, 280),
 "id": "dialogue_1748973322_61219",
 "music": "",
 "next_block_id": "dialogue_1748982635_68864",
@@ -80,13 +80,14 @@ blocks = {
 },
 "dialogue_1748982635_68864": {
 "background": "",
+"character_expression": "happy",
 "dialogues": [{
-"character_expression": "default",
-"character_name": "Isadora",
+"character_expression": "happy",
+"character_name": "Regina Valverde",
 "character_position": Vector2(0.5, 1),
 "text": "hauhao;lsdklfjal;ksjdf;lak"
 }],
-"graph_position": Vector2(1020, 240),
+"graph_position": Vector2(1040, 300),
 "id": "dialogue_1748982635_68864",
 "music": "",
 "next_block_id": "choice_1748975752_49692",

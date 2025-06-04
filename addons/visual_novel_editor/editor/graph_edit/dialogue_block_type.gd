@@ -174,17 +174,6 @@ func _create_dialogue_edit_group(index: int, dialogue: Dictionary, minimized: bo
 		var char_index = 0
 		var char_names = block_node.characters_cache.keys()
 		
-		for i in range(char_names.size()):
-			char_dropdown.add_item(char_names[i])
-			if char_names[i] == current_char:
-				char_index = i
-		
-		char_dropdown.selected = char_index
-		char_dropdown.item_selected.connect(func(idx):
-			block_data["dialogues"][index]["character_name"] = char_dropdown.get_item_text(idx)
-			block_node._emit_update()
-		)
-		
 		var expr_hbox = HBoxContainer.new()
 		group.add_child(expr_hbox)
 		
@@ -195,6 +184,25 @@ func _create_dialogue_edit_group(index: int, dialogue: Dictionary, minimized: bo
 		var expr_dropdown = OptionButton.new()
 		expr_dropdown.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		expr_hbox.add_child(expr_dropdown)
+		
+		for i in range(char_names.size()):
+			char_dropdown.add_item(char_names[i])
+			if char_names[i] == current_char:
+				char_index = i
+		
+		char_dropdown.selected = char_index
+		char_dropdown.item_selected.connect(func(idx):
+			var new_char = char_dropdown.get_item_text(idx)
+			block_data["dialogues"][index]["character_name"] = new_char
+			
+			# Resetar para expressão padrão válida
+			if block_node.characters_cache.has(new_char):
+				var expressions = block_node.characters_cache[new_char]
+				if expressions.size() > 0:
+					block_data["dialogues"][index]["character_expression"] = expressions[0]
+			_update_expression_dropdown(expr_dropdown, char_dropdown.get_item_text(idx))
+			block_node._emit_update()
+		)
 		
 		_update_expression_dropdown(expr_dropdown, current_char)
 		expr_dropdown.item_selected.connect(func(idx):
@@ -317,11 +325,19 @@ func _open_file_dialog(title: String, target: LineEdit, filters: Array):
 func _update_expression_dropdown(dropdown: OptionButton, char_name: String):
 	dropdown.clear()
 	
-	if char_name.is_empty() or not block_node.characters_cache.has(char_name):
+	if char_name.is_empty():
+		dropdown.add_item("Nenhum personagem selecionado")
+		dropdown.disabled = true
 		return
 	
+	if not block_node.characters_cache.has(char_name):
+		dropdown.add_item("Personagem não encontrado")
+		dropdown.disabled = true
+		return
+	
+	dropdown.disabled = false
 	var expressions = block_node.characters_cache[char_name]
-	var current_expr = block_data.get("character_expression", "")
+	var current_expr = block_data.get("character_expression", "default")
 	var expr_index = 0
 	
 	for i in range(expressions.size()):
