@@ -131,6 +131,7 @@ func setup_edit_ui(parent: Control):
 	music_btn.text = "Procurar"
 	music_btn.pressed.connect(_browse_music.bind(music_edit))
 	music_hbox.add_child(music_btn)
+	super.setup_edit_ui(parent)
 
 func _create_dialogue_edit_group(index: int, dialogue: Dictionary, minimized: bool) -> Control:
 	var group = VBoxContainer.new()
@@ -295,10 +296,10 @@ func _remove_dialogue_entry(index: int):
 		block_node._update_ui()
 
 func _browse_background(line_edit: LineEdit):
-	_open_file_dialog("Selecione um Background", line_edit, ["*.png", "*.jpg"])
+	_open_file_dialog("Selecione um Background", line_edit, ["*.png", "*.jpg", "*.jpeg", "*.webp"])
 
 func _browse_music(line_edit: LineEdit):
-	_open_file_dialog("Selecione uma Música", line_edit, ["*.ogg", "*.wav"])
+	_open_file_dialog("Selecione uma Música", line_edit, ["*.ogg", "*.wav", "*.mp3"])
 
 func _open_file_dialog(title: String, target: LineEdit, filters: Array):
 	var dialog = FileDialog.new()
@@ -310,6 +311,7 @@ func _open_file_dialog(title: String, target: LineEdit, filters: Array):
 		dialog.add_filter(filter)
 	
 	dialog.file_selected.connect(func(path):
+		# Armazena apenas o caminho original
 		target.text = path
 		target.text_changed.emit(path)
 		dialog.queue_free()

@@ -19,15 +19,25 @@ var dialogue_display = null
 var last_completed_chapter_id = ""
 
 # Estado atual do jogo
-var game_state = {
+var game_state = GameState.new()
+var method_registry = MethodRegistry.new()
+var conditional_system = ConditionalSystem.new(game_state, method_registry)
+var game_save_state = {
 	"current_save_slot": 0,  # Slot atualmente em uso
 	"save_slots": {}         # Dicionário com todos os slots de save
 }
 const MAX_SAVE_SLOTS = 50    # Número máximo de slots de save
 
+# Exemplo de chamada de métodos condicionais
+#func _ready():
+	## Registrar métodos comuns
+	#method_registry.register_method("increase_sanity", Callable(self, "_increase_sanity"))
+	#method_registry.register_method("decrease_sanity", Callable(self, "_decrease_sanity"))
+	#method_registry.register_method("unlock_ending", Callable(self, "_unlock_ending"))
+
 func save_game_state(slot_index: int = -1):
 	# Determinar qual slot usar
-	var save_slot = slot_index if slot_index != -1 else game_state["current_save_slot"]
+	var save_slot = slot_index if slot_index != -1 else game_save_state["current_save_slot"]
 	
 	# Criar a pasta se ela não existir
 	var dir = DirAccess.open("user://")
@@ -39,8 +49,8 @@ func save_game_state(slot_index: int = -1):
 		dir.make_dir_recursive("user://saves")
 	
 	# Salvar cada slot em um arquivo separado
-	for slot in game_state["save_slots"]:
-		var slot_data = game_state["save_slots"][slot]
+	for slot in game_save_state["save_slots"]:
+		var slot_data = game_save_state["save_slots"][slot]
 		var file_path = "user://saves/save_slot_%d.json" % slot
 		
 		var file = FileAccess.open(file_path, FileAccess.WRITE)
@@ -55,14 +65,14 @@ func save_game_state(slot_index: int = -1):
 	var current_slot_path = "user://saves/current_slot.json"
 	var current_slot_file = FileAccess.open(current_slot_path, FileAccess.WRITE)
 	if current_slot_file:
-		current_slot_file.store_string(JSON.stringify({"current_slot": game_state["current_save_slot"]}))
+		current_slot_file.store_string(JSON.stringify({"current_slot": game_save_state["current_save_slot"]}))
 		current_slot_file.close()
 	
 	print("GameState salvo (slot %d)" % save_slot)
 
 func load_game_state():
 	# Inicializar estruturas
-	game_state = {
+	game_save_state = {
 		"current_save_slot": 0,
 		"save_slots": {}
 	}
@@ -75,7 +85,7 @@ func load_game_state():
 			var json = JSON.new()
 			var error = json.parse(file.get_as_text())
 			if error == OK:
-				game_state["current_save_slot"] = json.data.get("current_slot", 0)
+				game_save_state["current_save_slot"] = json.data.get("current_slot", 0)
 			file.close()
 	
 	# Carregar todos os slots de save
@@ -87,16 +97,16 @@ func load_game_state():
 				var json = JSON.new()
 				var error = json.parse(file.get_as_text())
 				if error == OK:
-					game_state["save_slots"][i] = json.data
+					game_save_state["save_slots"][i] = json.data
 				file.close()
 	
 	print("Dados de jogo carregados")
 
 func get_current_save_data() -> Dictionary:
-	return game_state["save_slots"].get(game_state["current_save_slot"], {})
+	return game_save_state["save_slots"].get(game_save_state["current_save_slot"], {})
 
 func set_current_save_data(data: Dictionary):
-	game_state["save_slots"][game_state["current_save_slot"]] = data
+	game_save_state["save_slots"][game_save_state["current_save_slot"]] = data
 
 func create_new_save(slot_index: int) -> bool:
 	if slot_index < 0 or slot_index >= MAX_SAVE_SLOTS:
@@ -112,8 +122,8 @@ func create_new_save(slot_index: int) -> bool:
 		"inventory": []
 	}
 	
-	game_state["save_slots"][slot_index] = new_save
-	game_state["current_save_slot"] = slot_index
+	game_save_state["save_slots"][slot_index] = new_save
+	game_save_state["current_save_slot"] = slot_index
 	save_game_state(slot_index)
 	return true
 
@@ -121,17 +131,17 @@ func load_save(slot_index: int) -> bool:
 	if slot_index < 0 or slot_index >= MAX_SAVE_SLOTS:
 		return false
 	
-	if not game_state["save_slots"].has(slot_index):
+	if not game_save_state["save_slots"].has(slot_index):
 		return false
 	
-	game_state["current_save_slot"] = slot_index
+	game_save_state["current_save_slot"] = slot_index
 	return true
 
 func delete_save(slot_index: int) -> bool:
 	if slot_index < 0 or slot_index >= MAX_SAVE_SLOTS:
 		return false
 	
-	if game_state["save_slots"].erase(slot_index):
+	if game_save_state["save_slots"].erase(slot_index):
 		# Apagar também o arquivo físico
 		var file_path = "user://saves/save_slot_%d.json" % slot_index
 		if FileAccess.file_exists(file_path):
@@ -208,6 +218,17 @@ func _process_current_block():
 	# Resetar índice de diálogo ao entrar em novo bloco
 	current_dialogue_index = 0
 	
+	# Executar ações do bloco
+	for action in block.get("actions", []):
+		_execute_action(action)
+	
+	# Avaliar condicionais
+	var next_block = _evaluate_conditionals(block)
+	if next_block:
+		current_block_id = next_block
+		_process_current_block()
+		return
+	
 	match block.type:
 		"dialogue":
 			pass  # A UI será atualizada via sinal dialogue_advanced
@@ -215,6 +236,25 @@ func _process_current_block():
 			emit_signal("choice_presented", block.choices)
 		_:
 			advance_dialogue()
+
+func _execute_action(action: Dictionary):
+	match action.get("type"):
+		"set":
+			game_state.set_variable(action["target"], action["value"])
+		"modify":
+			game_state.modify_variable(action["target"], action["value"])
+		"call":
+			var args = action.get("args", [])
+			method_registry.execute_method(action["target"], args)
+
+func _evaluate_conditionals(block: Dictionary) -> String:
+	for conditional in block.get("conditionals", []):
+		var result = conditional_system.evaluate(conditional["expression"])
+		if result is bool and result:
+			return conditional["target_block"]
+		elif result is String:
+			return result
+	return ""
 
 # Método para selecionar uma escolha
 func select_choice(choice_index):

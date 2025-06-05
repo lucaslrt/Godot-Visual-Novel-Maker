@@ -58,3 +58,58 @@ func setup_preview_ui(parent: Control):
 		next_label.text = "→ " + choice.get("next_block_id", "Nenhum")
 		next_label.modulate = Color(0.7, 0.7, 0.7)
 		hbox.add_child(next_label)
+
+func setup_edit_ui(parent: Control):
+	var choices_scroll = ScrollContainer.new()
+	choices_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	choices_scroll.custom_minimum_size.y = 150
+	
+	parent.add_child(choices_scroll)
+	
+	var choices_vbox = VBoxContainer.new()
+	choices_scroll.add_child(choices_vbox)
+	
+	var choices = block_data.get("choices", [])
+	
+	for i in range(choices.size()):
+		var choice = choices[i]
+		var hbox = HBoxContainer.new()
+		choices_vbox.add_child(hbox)
+
+		# Indicador visual do slot
+		var slot_indicator = ColorRect.new()
+		slot_indicator.color = Color(0.8, 0.8, 0.2)
+		slot_indicator.custom_minimum_size = Vector2(15, 15)
+		
+		hbox.add_child(slot_indicator)
+		
+		var text_edit = LineEdit.new()
+		text_edit.text = choice.get("text", "")
+		text_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		text_edit.text_changed.connect(func(text, idx=i):
+			block_data.choices[idx]["text"] = text
+			block_node._emit_update()
+		)
+		
+		hbox.add_child(text_edit)
+		
+		var delete_btn = Button.new()
+		delete_btn.text = "X"
+		delete_btn.pressed.connect(func(idx=i):
+			block_data.choices.remove_at(idx)
+			block_node._update_ui()
+			block_node._emit_update()
+		)
+		
+		hbox.add_child(delete_btn)
+		
+	var add_btn = Button.new()
+	add_btn.text = "Adicionar Escolha"
+	add_btn.pressed.connect(func():
+		block_data.choices.append({"text": "Nova escolha", "next_block_id": ""})
+		block_node._update_ui()
+		block_node._emit_update()
+	)
+	
+	parent.add_child(add_btn)
+	super.setup_edit_ui(parent)

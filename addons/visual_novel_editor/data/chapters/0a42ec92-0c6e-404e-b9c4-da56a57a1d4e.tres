@@ -10,6 +10,7 @@ chapter_description = "Descrição do capítulo"
 start_block_id = "start_1748912454_13728"
 blocks = {
 "choice_1748975752_49692": {
+"actions": [],
 "choices": [{
 "next_block_id": "dialogue_1748975769_32776",
 "text": "Opção 1"
@@ -17,12 +18,19 @@ blocks = {
 "next_block_id": "dialogue_1748975771_82898",
 "text": "Opção 2"
 }],
+"conditionals": [],
 "graph_position": Vector2(2000, 260),
 "id": "choice_1748975752_49692",
 "type": "choice"
 },
 "dialogue_1748973322_61219": {
+"actions": [{
+"target": "",
+"type": "set",
+"value": ""
+}],
 "background": "",
+"conditionals": [],
 "dialogues": [{
 "character_expression": "default",
 "character_name": "Rato",
@@ -39,7 +47,7 @@ blocks = {
 "character_position": Vector2(0.5, 1),
 "text": "Regina"
 }],
-"graph_position": Vector2(140, 280),
+"graph_position": Vector2(120, 160),
 "id": "dialogue_1748973322_61219",
 "music": "",
 "next_block_id": "dialogue_1748982635_68864",

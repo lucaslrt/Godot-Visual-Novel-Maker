@@ -9,6 +9,8 @@ class_name CharacterResource
 @export var expressions: Dictionary = {
 	"default": null  # A textura default
 }
+@export var actions: Array = [] # { "type": "set|modify|call", "target": "", "value": "" }
+@export var conditionals: Array = [] # { "expression": "", "target_block": "" }
 
 func _init():
 	# Gerar ID único se estiver vazio

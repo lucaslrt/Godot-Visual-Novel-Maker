@@ -45,6 +45,12 @@ func setup(initial_data: Dictionary) -> void:
 		initial_data.erase("character_position")
 		initial_data.erase("text")
 	
+	if not initial_data.has("actions"):
+		initial_data["actions"] = []
+	
+	if not initial_data.has("conditionals"):
+		initial_data["conditionals"] = []
+	
 	block_data = initial_data
 	
 	# Criar o tipo de bloco apropriado

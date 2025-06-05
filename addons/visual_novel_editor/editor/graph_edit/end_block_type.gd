@@ -13,3 +13,6 @@ func setup_preview_ui(parent: Control):
 	var label = Label.new()
 	label.text = "Fim do capítulo"
 	parent.add_child(label)
+
+func setup_edit_ui(parent: Control):
+	super.setup_edit_ui(parent)

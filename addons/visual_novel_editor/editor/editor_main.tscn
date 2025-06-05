@@ -67,10 +67,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-current_tab = 1
+current_tab = 0
 
 [node name="ChapterEditor" type="MarginContainer" parent="TabContainer"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -119,8 +118,9 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 1
-item_0/text = "Novo Capítulo 1"
+item_count = 2
+item_0/text = "Novo Capítulo 0"
+item_1/text = "Novo Capítulo 2"
 script = ExtResource("2_1oe52")
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/ChapterEditor/VBoxContainer/HSplitContainer"]
@@ -158,6 +158,7 @@ script = ExtResource("2_m406w")
 layout_mode = 2
 
 [node name="CharacterEditor" type="MarginContainer" parent="TabContainer"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -207,9 +208,17 @@ text = "Chapters"
 layout_mode = 2
 size_flags_vertical = 3
 auto_height = true
-item_count = 2
-item_0/text = "Novo Personagem 2"
-item_1/text = "Juanito"
+item_count = 10
+item_0/text = "Rato"
+item_1/text = "Caco"
+item_2/text = "Márcia"
+item_3/text = "Tuca"
+item_4/text = "Alex Teixeira"
+item_5/text = "Novo Personagem 10"
+item_6/text = "Regina Valverde"
+item_7/text = "Isadora"
+item_8/text = "Lila"
+item_9/text = "Evandro Vidal"
 
 [node name="TabContainer" type="TabContainer" parent="TabContainer/CharacterEditor/VBoxContainer/HSplitContainer"]
 layout_mode = 2
