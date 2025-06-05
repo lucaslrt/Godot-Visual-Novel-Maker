@@ -173,8 +173,22 @@ func _show_dialogue(block_data: Dictionary):
 		visual_novel_manager.advance_dialogue()
 		return
 	
-	# Obter diálogo atual
-	var dialogue = block_data["dialogues"][visual_novel_manager.current_dialogue_index]
+	# Filtrar diálogos visíveis
+	var visible_dialogues = []
+	for dialogue in block_data["dialogues"]:
+		if visual_novel_manager._is_condition_met(dialogue.get("conditions", "")):
+			visible_dialogues.append(dialogue)
+	
+	# Verificar se o índice atual ainda é válido
+	if visual_novel_manager.current_dialogue_index >= visible_dialogues.size():
+		visual_novel_manager.current_dialogue_index = visible_dialogues.size() - 1
+	
+	if visual_novel_manager.current_dialogue_index < 0 or visual_novel_manager.current_dialogue_index >= visible_dialogues.size():
+		visual_novel_manager.advance_dialogue()
+		return
+	
+	# Obter diálogo atual (já filtrado)
+	var dialogue = visible_dialogues[visual_novel_manager.current_dialogue_index]
 	
 	# Mostrar nome do personagem
 	var character_name = dialogue.get("character_name", "")
@@ -273,9 +287,15 @@ func _show_choices(choices: Array):
 	# Mostrar painel de escolhas
 	choices_panel.visible = true
 	
+	# Filtrar escolhas visíveis
+	var visible_choices = []
+	for choice in choices:
+		if visual_novel_manager._is_condition_met(choice.get("conditions", "")):
+			visible_choices.append(choice)
+	
 	# Criar botões para cada escolha
-	for i in range(choices.size()):
-		var choice = choices[i]
+	for i in range(visible_choices.size()):
+		var choice = visible_choices[i]
 		var button = Button.new()
 		button.text = choice.get("text", "Escolha " + str(i + 1))
 		button.custom_minimum_size = Vector2(400, 50)

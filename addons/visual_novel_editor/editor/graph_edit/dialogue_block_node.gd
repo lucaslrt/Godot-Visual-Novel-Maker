@@ -50,6 +50,12 @@ func setup(initial_data: Dictionary) -> void:
 	
 	if not initial_data.has("conditionals"):
 		initial_data["conditionals"] = []
+		
+	# Garantir que cada diálogo tenha campo de condição
+	if initial_data.has("dialogues"):
+		for dialogue in initial_data["dialogues"]:
+			if not dialogue.has("conditions"):
+				dialogue["conditions"] = ""
 	
 	block_data = initial_data
 	

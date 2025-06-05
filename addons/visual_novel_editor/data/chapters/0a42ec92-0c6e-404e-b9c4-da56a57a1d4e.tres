@@ -10,7 +10,11 @@ chapter_description = "Descrição do capítulo"
 start_block_id = "start_1748912454_13728"
 blocks = {
 "choice_1748975752_49692": {
-"actions": [],
+"actions": [{
+"target": "",
+"type": "modify",
+"value": ""
+}],
 "choices": [{
 "next_block_id": "dialogue_1748975769_32776",
 "text": "Opção 1"
@@ -18,8 +22,11 @@ blocks = {
 "next_block_id": "dialogue_1748975771_82898",
 "text": "Opção 2"
 }],
-"conditionals": [],
-"graph_position": Vector2(2000, 260),
+"conditionals": [{
+"expression": "",
+"target_block": ""
+}],
+"graph_position": Vector2(3160, 280),
 "id": "choice_1748975752_49692",
 "type": "choice"
 },
@@ -35,74 +42,89 @@ blocks = {
 "character_expression": "default",
 "character_name": "Rato",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Texto exemplo"
 }, {
 "character_expression": "default",
 "character_name": "Caco",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Texto 2"
 }, {
 "character_expression": "default",
 "character_name": "Regina Valverde",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Regina"
 }],
-"graph_position": Vector2(120, 160),
+"graph_position": Vector2(560, -560),
 "id": "dialogue_1748973322_61219",
 "music": "",
 "next_block_id": "dialogue_1748982635_68864",
 "type": "dialogue"
 },
 "dialogue_1748975769_32776": {
+"actions": [],
 "background": "",
+"conditionals": [],
 "dialogues": [{
 "character_expression": "default",
 "character_name": "Márcia",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Texto 3"
 }],
-"graph_position": Vector2(3220, -200),
+"graph_position": Vector2(4500, -180),
 "id": "dialogue_1748975769_32776",
 "music": "",
 "next_block_id": "end_1748912454_13728",
 "type": "dialogue"
 },
 "dialogue_1748975771_82898": {
+"actions": [],
 "background": "",
+"conditionals": [],
 "dialogues": [{
 "character_expression": "default",
 "character_name": "Alex Teixeira",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Texto 4"
 }, {
 "character_expression": "default",
 "character_name": "Lila",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "Texto 5"
 }],
-"graph_position": Vector2(3140, 580),
+"graph_position": Vector2(4420, 600),
 "id": "dialogue_1748975771_82898",
 "music": "",
 "next_block_id": "end_1748912454_13728",
 "type": "dialogue"
 },
 "dialogue_1748982635_68864": {
+"actions": [],
 "background": "",
 "character_expression": "happy",
+"conditionals": [],
 "dialogues": [{
 "character_expression": "happy",
 "character_name": "Regina Valverde",
 "character_position": Vector2(0.5, 1),
+"conditions": "",
 "text": "hauhao;lsdklfjal;ksjdf;lak"
 }],
-"graph_position": Vector2(1040, 300),
+"graph_position": Vector2(2320, 320),
 "id": "dialogue_1748982635_68864",
 "music": "",
 "next_block_id": "choice_1748975752_49692",
 "type": "dialogue"
 },
 "end_1748912454_13728": {
-"graph_position": Vector2(4540, 280),
+"actions": [],
+"conditionals": [],
+"graph_position": Vector2(5820, 300),
 "id": "end_1748912454_13728",
 "type": "end"
 },

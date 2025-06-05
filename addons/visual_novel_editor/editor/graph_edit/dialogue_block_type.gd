@@ -259,6 +259,24 @@ func _create_dialogue_edit_group(index: int, dialogue: Dictionary, minimized: bo
 			block_node._emit_update()
 		)
 		group.add_child(text_edit)
+		
+		# Adicionar campo de condição
+		var cond_hbox = HBoxContainer.new()
+		group.add_child(cond_hbox)
+		
+		var cond_label = Label.new()
+		cond_label.text = "Condição:"
+		cond_hbox.add_child(cond_label)
+		
+		var cond_edit = LineEdit.new()
+		cond_edit.text = dialogue.get("conditions", "")
+		cond_edit.placeholder_text = "Ex: sanity > 50"
+		cond_edit.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cond_edit.text_changed.connect(func(text):
+			dialogue["conditions"] = text
+			block_node._emit_update()
+		)
+		cond_hbox.add_child(cond_edit)
 	
 	return group
 

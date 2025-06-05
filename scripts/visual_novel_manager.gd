@@ -231,11 +231,40 @@ func _process_current_block():
 	
 	match block.type:
 		"dialogue":
-			pass  # A UI será atualizada via sinal dialogue_advanced
+			# Filtrar diálogos por condições
+			var visible_dialogues = []
+			for dialogue in block.get("dialogues", []):
+				if _is_condition_met(dialogue.get("conditions", "")):
+					visible_dialogues.append(dialogue)
+			
+			# Se não houver diálogos visíveis, avançar
+			if visible_dialogues.size() == 0:
+				advance_dialogue()
+				return
+		
 		"choice":
-			emit_signal("choice_presented", block.choices)
+			# Filtrar escolhas por condições
+			var visible_choices = []
+			for choice in block.get("choices", []):
+				if _is_condition_met(choice.get("conditions", "")):
+					visible_choices.append(choice)
+			
+			# Se não houver escolhas visíveis, avançar
+			if visible_choices.size() == 0:
+				advance_dialogue()
+				return
+			
+			emit_signal("choice_presented", visible_choices)
 		_:
 			advance_dialogue()
+
+# Novo método para verificar condições
+func _is_condition_met(condition: String) -> bool:
+	if condition.strip_edges().is_empty():
+		return true  # Sem condição, sempre visível
+	
+	# Usar nosso sistema condicional existente
+	return conditional_system.evaluate(condition)
 
 func _execute_action(action: Dictionary):
 	match action.get("type"):
